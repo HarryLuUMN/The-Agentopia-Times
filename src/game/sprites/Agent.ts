@@ -164,7 +164,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   }
 
   public getName(){
-        return this.name;
+    return this.name;
   }
 
   public getBias(){

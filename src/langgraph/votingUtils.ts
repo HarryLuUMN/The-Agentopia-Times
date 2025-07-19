@@ -23,6 +23,7 @@ export async function parallelVotingExecutor(
     tilemap: any,
     destination: any,
     index: number,
+    level: string
 ) {
     console.log('[Debug] Starting parallelVotingExecutor...');
     const originalPositions = agents.map((agent) => ({
@@ -82,7 +83,7 @@ export async function parallelVotingExecutor(
             const userContent = `write a news title for the given topic: ${datasetDescription}; The title is prepared for a news or magazine article about the dataset.`;
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
-            msg = await startDataFetcher(scene, agent);
+            msg = await startDataFetcher(scene, agent, level);
             let userContent =
                 'based on the given insights, generate a consice news article to summarize that(words<200)\n' +
                 `
@@ -280,6 +281,7 @@ export function constructVotingGraph(
     destination: any,
     finalDestination: any,
     index: number,
+    level: string
 ) {
     console.log('[Debug] Starting to construct voting graph...');
     const votingGraph = new StateGraph(VotingGraphStateAnnotation as any);
@@ -292,6 +294,7 @@ export function constructVotingGraph(
             tilemap,
             destination,
             index,
+            level
         );
         console.log('[Debug] Voting phase completed.');
         return { ...state, votingVotes: votes };

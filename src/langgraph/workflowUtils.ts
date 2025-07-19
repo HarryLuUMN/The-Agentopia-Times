@@ -5,7 +5,22 @@ import { initializeLLM } from './chainingUtils';
 import { generateImage } from './dalleUtils';
 import { generateChartImage } from './visualizationGenerate';
 import { webStyle } from './const';
-import { baseballDatasetStatistic, baseballGroundTruth, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic, kidneyGroundTruth } from '../const';
+// import { baseballDatasetStatistic, baseballGroundTruth, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic, kidneyGroundTruth } from '../const';
+import {
+  kidneyGroundTruth,
+  baseballGroundTruth,
+
+  baseballDatasetStatistic,
+  kidneyDatasetStatistic,
+
+  baseballStatLevel1,
+  baseballStatLevel2,
+  baseballStatLevel3,
+  kidneyStatLevel1,
+  kidneyStatLevel2,
+  kidneyStatLevel3
+} from '../const';
+
 
 export function returnDatasetDescription(scene: any) {
     let datasetDescription = `The Justice and Jeter Baseball Dataset is a classic example illustrating Simpson's Paradox, where trends observed within individual groups reverse when the groups are combined. In the 1995 and 1996 MLB seasons, David Justice had a higher batting average than Derek Jeter in each year individually. However, when the data from both years are combined, Jeter's overall batting average surpasses Justice's. This counterintuitive result arises because Jeter had significantly more at-bats in 1996—a year in which he performed exceptionally well—while Justice had more at-bats in 1995, when his performance was comparatively lower. The imbalance in the distribution of at-bats across the two years affects the combined averages, leading to the paradoxical outcome. This dataset serves as a compelling demonstration of how aggregated data can sometimes lead to misleading conclusions if underlying subgroup trends and data distributions are not carefully considered. ​`;
@@ -16,23 +31,43 @@ export function returnDatasetDescription(scene: any) {
 }
 
 // for analysis
-export async function startDataFetcher(scene: any, agent: any) {
+export async function startDataFetcher(scene: any, agent: any, level: string) {
     // let datasetPath = covidPath;
+
+    // let stats = baseballDatasetStatistic;
+
+    // console.log("biased data fetcher,", agent.getBias());
+    // if (scene.registry.get('currentDataset') === 'kidney') {
+    //     // datasetPath = ucbPath;
+    //     stats = kidneyDatasetStatistic;
+    // }
+    // if(agent.getBias()!== '') {
+    //   if(scene.registry.get('currentDataset') === 'kidney') {
+    //     stats = biasedKidneyDatasetStatistic
+    //   }else{
+    //     stats = biasedBaseballDatasetStatistic;
+    //   }
+    // }
 
     let stats = baseballDatasetStatistic;
 
-    console.log("biased data fetcher,", agent.getBias());
-    if (scene.registry.get('currentDataset') === 'kidney') {
-        // datasetPath = ucbPath;
-        stats = kidneyDatasetStatistic;
+    if (scene.registry.get("currentDataset") === "kidney") {
+      stats = kidneyDatasetStatistic;
     }
-    if(agent.getBias()!== '') {
-      if(scene.registry.get('currentDataset') === 'kidney') {
-        stats = biasedKidneyDatasetStatistic
-      }else{
-        stats = biasedBaseballDatasetStatistic;
+
+    if (agent.getBias() !== "") {
+      const level = scene.registry.get("currentLevel");
+      if (scene.registry.get("currentDataset") === "kidney") {
+        if (level === "level1") stats = kidneyStatLevel1;
+        else if (level === "level2") stats = kidneyStatLevel2;
+        else if (level === "level3") stats = kidneyStatLevel3;
+      } else {
+        if (level === "level1") stats = baseballStatLevel1;
+        else if (level === "level2") stats = baseballStatLevel2;
+        else if (level === "level3") stats = baseballStatLevel3;
       }
     }
+
 
     let datasetPath = baseballPath;
     let researchQuestions = `

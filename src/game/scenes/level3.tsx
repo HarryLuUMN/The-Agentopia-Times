@@ -28,7 +28,8 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-const level = "level2";
+const level = "level3"
+
 
 export interface Zone {
   zone: Phaser.GameObjects.Zone;
@@ -36,7 +37,7 @@ export interface Zone {
   agentsInside: Set<string>;
 }
 
-export class Level2 extends ParentScene {
+export class Level3 extends ParentScene {
 
   private parrellePositionGroup!: Phaser.Physics.Arcade.StaticGroup;
   private agentList: Map<string, Agent> = new Map();
@@ -262,7 +263,7 @@ private getInfoText(imageKey: string): string {
     super(level);
     this.sceneName = "";
     eventTargetBus.addEventListener("signal", (event:any) => {
-      console.log(`Level2 received: ${event.detail}`);
+      console.log(`Level3 received: ${event.detail}`);
       if (event.detail === "signal 1") {
         console.log("Research phase completed.");
       } else if (event.detail === "signal 2") {
@@ -272,7 +273,7 @@ private getInfoText(imageKey: string): string {
   }
 
   create() {
-      this.registry.set('isWorkflowRunning', false);
+          this.registry.set('isWorkflowRunning', false);
       this.registry.set('currentPattern', "");
       this.registry.set('currentDataset', 'baseball');
       this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
@@ -315,8 +316,8 @@ private getInfoText(imageKey: string): string {
       window.location.reload();
     });
 
-    // Level 2: Cherry-picking & Overgeneralization
-    this.add.text(-50, 20, 'Level 2: Cherry-picking & Overgeneralization', {
+    // Level 3: Framing & Ambiguity
+    this.add.text(-50, 20, 'Level 3: Framing & Ambiguity', {
       fontSize: '18px',
       fontFamily: 'Verdana',
       color: '#ffffff',
@@ -328,7 +329,7 @@ private getInfoText(imageKey: string): string {
 
     // difficualties selection button
     const difficulties = ['level 1', 'level 2', 'level 3'];
-    let difficultyIndex = 1; // default is 'medium'
+    let difficultyIndex = 2; // default is 'level 3'
     const difficultyLabel = this.add.text(-50, 60, '', {
       fontSize: '16px',
       fontFamily: 'Verdana',
@@ -374,20 +375,24 @@ private getInfoText(imageKey: string): string {
   .setDepth(2000);
 
   startButton.on('pointerdown', () => {
-    const selected = this.registry.get('gameDifficulty');
-    const targetSceneKey = selected.toLowerCase().replace(' ', '');
+    const selected = this.registry.get('gameDifficulty'); // e.g., "level 2"
+    const targetSceneKey = selected.toLowerCase().replace(' ', ''); // e.g., "level2"
 
     console.log(`Switching to scene: ${targetSceneKey}`);
 
     if (this.scene.key === targetSceneKey) {
-      // If this is the current scenario, restart it instead of starting the
+      // 🚨 如果当前就是这个场景，重启它而不是 start
       this.scene.restart();
     } else {
-      // Otherwise, stop the current one, then start the target
+      // ✅ 否则，先 stop 当前，再 start 目标
       this.scene.stop(this.scene.key);
       this.scene.start(targetSceneKey);
     }
   });
+
+
+
+
     
 
     setupScene.call(this, "office");
@@ -1134,20 +1139,6 @@ return result;
   } 
 
 
-  // if(
-  //   this.registry.get('isWorkflowRunning')===false
-  //   &&!areAllZonesOccupied(this.parallelZones)
-  //   &&!areAllZonesOccupied(this.votingZones)
-  //   &&!areAllZonesOccupied(this.routeZones)
-  // ){
-  //   this.registry.('currentPattern', "");
-  //   this.isWorkflowAvailable = false;
-  //   if(this.debateStartBtn){
-  //     this.debateStartBtn.destroy();
-  //     this.debateStartLabel.destroy();
-  //   }
-  // }
-
   if (
     this.registry.get('isWorkflowRunning') === false &&
     !areAllZonesOccupied(this.parallelZones) &&
@@ -1167,7 +1158,6 @@ return result;
       this.debateStartLabel = undefined;
     }
   }
-
 
 
     this.playerControlledAgent =

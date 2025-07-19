@@ -381,10 +381,8 @@ private getInfoText(imageKey: string): string {
     console.log(`Switching to scene: ${targetSceneKey}`);
 
     if (this.scene.key === targetSceneKey) {
-      // 🚨 如果当前就是这个场景，重启它而不是 start
       this.scene.restart();
     } else {
-      // ✅ 否则，先 stop 当前，再 start 目标
       this.scene.stop(this.scene.key);
       this.scene.start(targetSceneKey);
     }

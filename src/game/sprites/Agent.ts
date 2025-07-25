@@ -34,12 +34,19 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   private wasDragged: boolean = false; // if user drag the agent now
 
+  public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
+  
+  // Add reset method of the calculation of the biased agents
+  public static resetBiasedAgentsCount() {
+    Agent.biasedAgentsCount = 0;
+  }
+
 
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
     console.log(`---Step for Agent: ${this.name}---`);
     return state;
-};
+  };
 
   public inventory: Inventory = {
       promptUtils: [],
@@ -264,6 +271,9 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
           this.setTexture(key.atlas.bias);
           this.createAnimations(key.atlas.bias);     
           this.bias = 'biased';
+          
+          Agent.biasedAgentsCount++;
+          
           console.log("Agent is now biased:", this.name, this.isBiased, this.getBias());     
           // this.play("player_down");
         } else {
@@ -276,6 +286,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
           this.createAnimations(key.atlas.player);
           // this.play("player_down");
         }
+        // console.log("Current biased agents count:", Agent.biasedAgentsCount);
       }
     }
 

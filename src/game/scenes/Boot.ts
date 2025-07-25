@@ -65,7 +65,7 @@ export class Boot extends Scene {
       this.verifyApiKey(storedApiKey).then(isValid => {
         if (isValid) {
           // API Key valid, direct access to the game scene
-          this.scene.start('level2');
+          this.scene.start('level1');
         } else {
           // If the API Key is invalid, go to the main menu
           this.scene.start('MainMenu');

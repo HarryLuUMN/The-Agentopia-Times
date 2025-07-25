@@ -82,182 +82,131 @@ export class Level3 extends ParentScene {
   private selectedText?: Phaser.GameObjects.Text;
   private selectedDataset: string = "none";
 
-private attachInfoIcon(
-  target: Phaser.GameObjects.Image,
-  imageKey: string,
-  offsetX = 35,
-  offsetY = -20
-) {
-  const icon = this.add.text(
-    target.x + offsetX,
-    target.y + offsetY,
-    '🛈',
-    {
-      fontSize: '25px',
-      color: '#ffffff',
-      // backgroundColor: '#0000ff',
-      fontStyle: 'normal',
-      padding: { x: 8, y: 6 },
-      fontFamily: 'Verdana',
-    }
-  )
-  .setScrollFactor(0)
-  .setDepth(9999)
-  .setOrigin(0.5)
-  .setResolution(2)
-  .setInteractive();
+    private requiredBiasedAgents: number = 3; // the number of the biased agents in this level
+    private biasedAgentsStatusText!: Phaser.GameObjects.Text;
 
-  // console.log(
-  //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
-  // );
+  private attachInfoIcon(
+    target: Phaser.GameObjects.Image,
+    imageKey: string,
+    offsetX = 35,
+    offsetY = -20
+  ){
+      const icon = this.add.text(
+        target.x + offsetX,
+        target.y + offsetY,
+        '🛈',
+        {
+          fontSize: '25px',
+          color: '#ffffff',
+          // backgroundColor: '#0000ff',
+          fontStyle: 'normal',
+          padding: { x: 8, y: 6 },
+          fontFamily: 'Verdana',
+        }
+      )
+      .setScrollFactor(0)
+      .setDepth(9999)
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setInteractive();
 
-icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-  const hoverWindowX = pointer.x + 230;
-  const hoverWindowY = pointer.y - 20;
+      // console.log(
+      //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
+      // );
 
-  if (!this.hoverWindow) {
-    const hoverText = this.getInfoText(imageKey);
+    icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
+      const hoverWindowX = pointer.x + 230;
+      const hoverWindowY = pointer.y - 20;
 
-    // Step 1: Create the text and hide it first
-    this.hoverWindowText = this.add.text(
-      hoverWindowX,
-      hoverWindowY,
-      hoverText,
-      {
-        fontFamily: 'Verdana',
-        fontSize: '16px',
-        color: '#ffffff',
-        wordWrap: { width: 500 },
+      if (!this.hoverWindow) {
+        const hoverText = this.getInfoText(imageKey);
+
+        // Step 1: Create the text and hide it first
+        this.hoverWindowText = this.add.text(
+          hoverWindowX,
+          hoverWindowY,
+          hoverText,
+          {
+            fontFamily: 'Verdana',
+            fontSize: '16px',
+            color: '#ffffff',
+            wordWrap: { width: 500 },
+          }
+        )
+        .setScrollFactor(0)
+        .setDepth(1012)
+        .setAlpha(1)
+        .setVisible(false)
+        .setOrigin(0.5, 0.5)
+        .setResolution(2);
+
+
+        // Step 2: Getting the text size
+        const bounds = this.hoverWindowText.getBounds();
+        const padding = 20;
+
+        // Step 3: Adding a Background
+        this.hoverWindow = this.add.rectangle(
+          hoverWindowX,
+          hoverWindowY,
+          bounds.width + padding,
+          bounds.height + padding,
+          0x000000
+        )
+        .setScrollFactor(0)
+        .setDepth(1011)
+        .setAlpha(0.9)
+        .setStrokeStyle(2, 0xffffff);
+
+        // Step 4: Displaying Text
+        this.hoverWindowText.setVisible(true);
       }
-    )
-    .setScrollFactor(0)
-    .setDepth(1012)
-    .setAlpha(1)
-    .setVisible(false)
-    .setOrigin(0.5, 0.5)
-    .setResolution(2);
+    });
 
-
-    // Step 2: Getting the text size
-    const bounds = this.hoverWindowText.getBounds();
-    const padding = 20;
-
-    // Step 3: Adding a Background
-    this.hoverWindow = this.add.rectangle(
-      hoverWindowX,
-      hoverWindowY,
-      bounds.width + padding,
-      bounds.height + padding,
-      0x000000
-    )
-    .setScrollFactor(0)
-    .setDepth(1011)
-    .setAlpha(0.9)
-    .setStrokeStyle(2, 0xffffff);
-
-    // Step 4: Displaying Text
-    this.hoverWindowText.setVisible(true);
+    icon.on('pointerout', () => {
+      this.hoverWindow?.destroy();
+      this.hoverWindowText?.destroy();
+      this.hoverWindow = undefined;
+      this.hoverWindowText = undefined;
+    });
   }
-});
 
-  icon.on('pointerout', () => {
-    this.hoverWindow?.destroy();
-    this.hoverWindowText?.destroy();
-    this.hoverWindow = undefined;
-    this.hoverWindowText = undefined;
-  });
-}
-
-
-
-// helper method: returns the corresponding message text based on the imageKey
-private getInfoText(imageKey: string): string {
-  switch(imageKey) {
-    case 'baseball_groundtruth':
-      return baseballGroundTruth;
-    case 'kidney_groundtruth':
-      return kidneyGroundTruth;
-    default:
-      return 'Dataset Info';
+  // helper method: returns the corresponding message text based on the imageKey
+  private getInfoText(imageKey: string): string {
+    switch(imageKey) {
+      case 'baseball_groundtruth':
+        return baseballGroundTruth;
+      case 'kidney_groundtruth':
+        return kidneyGroundTruth;
+      default:
+        return 'Dataset Info';
+    }
   }
-}
 
-// private attachInfoIcon(
-//   target: Phaser.GameObjects.Image,
-//   imageKey: string,
-//   offsetX = 35,
-//   offsetY = -35
-// ) {
-//   const x = target.x + offsetX;
-//   const y = target.y + offsetY;
+  // 获取biased agents状态文本
+  private getBiasedAgentsStatusText(): string {
+    const remaining = Math.max(0, this.requiredBiasedAgents - Agent.biasedAgentsCount);
+    
+    if (remaining > 0) {
+      return `You need to add a ${remaining} bias agent to start the game.`;
+    } else {
+      return `✓ Number of biased agents meets requirements (${Agent.biasedAgentsCount}/${this.requiredBiasedAgents})`;
+    }
+  }
 
-//   const circle = this.add.circle(0, 0, 16, 0xcccccc)
-//     .setScrollFactor(0);
+  private updateBiasedAgentsStatusText() {
+    this.biasedAgentsStatusText.setText(this.getBiasedAgentsStatusText());
+    
+    if (Agent.biasedAgentsCount >= this.requiredBiasedAgents) {
+      this.biasedAgentsStatusText.setColor('#00ff00');
+    } else {
+      this.biasedAgentsStatusText.setColor('#ffff00');
+    }
+  }
 
-//   const text = this.add.text(0, 0, 'i', {
-//     fontSize: '18px',
-//     color: '#000000',
-//     fontFamily: 'Verdana',
-//   })
-//     .setOrigin(0.5)
-//     .setScrollFactor(0);
-
-//   const icon = this.add.container(x, y, [circle, text])
-//     .setSize(32, 32)
-//     .setInteractive(
-//       new Phaser.Geom.Rectangle(-16, -16, 32, 32),
-//       Phaser.Geom.Rectangle.Contains
-//     )
-//     .setScrollFactor(0)
-//     .setDepth(10000);
-
-//   console.log(`Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`);
-//   console.log(`Target button depth: ${target.depth}, Icon depth: ${icon.depth}`);
-
-//   icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-//     const hoverWindowX = pointer.x + 20;
-//     const hoverWindowY = pointer.y - 20;
-
-//     if (!this.hoverWindow) {
-//       this.hoverWindow = this.add.rectangle(
-//         hoverWindowX,
-//         hoverWindowY,
-//         135,
-//         50,
-//         0x000000
-//       )
-//         .setScrollFactor(0)
-//         .setDepth(10001)
-//         .setAlpha(0.9)
-//         .setStrokeStyle(2, 0xffffff);
-
-//       this.hoverWindowText = this.add.text(
-//         hoverWindowX,
-//         hoverWindowY,
-//         this.getInfoText(imageKey)
-//       )
-//         .setScrollFactor(0)
-//         .setDepth(10002)
-//         .setAlpha(1)
-//         .setOrigin(0.5, 0.5)
-//         .setStyle({
-//           fontFamily: 'Verdana',
-//           fontSize: '12px',
-//           color: '#ffffff',
-//         });
-//     }
-//   });
-
-//   icon.on('pointerout', () => {
-//     this.hoverWindow?.destroy();
-//     this.hoverWindowText?.destroy();
-//     this.hoverWindow = undefined;
-//     this.hoverWindowText = undefined;
-//   });
-
-//   return icon;
-// }
-
+  private canStartGame(): boolean {
+    return Agent.biasedAgentsCount >= this.requiredBiasedAgents;
+  }
 
   constructor() {
     super(level);
@@ -273,7 +222,9 @@ private getInfoText(imageKey: string): string {
   }
 
   create() {
-          this.registry.set('isWorkflowRunning', false);
+      Agent.resetBiasedAgentsCount(); // reset the count of biased agents
+    
+      this.registry.set('isWorkflowRunning', false);
       this.registry.set('currentPattern', "");
       this.registry.set('currentDataset', 'baseball');
       this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
@@ -327,9 +278,10 @@ private getInfoText(imageKey: string): string {
     .setScrollFactor(0)
     .setDepth(2000);
 
-    // difficualties selection button
+
     const difficulties = ['level 1', 'level 2', 'level 3'];
-    let difficultyIndex = 2; // default is 'level 3'
+    let difficultyIndex = 2;
+
     const difficultyLabel = this.add.text(-50, 60, '', {
       fontSize: '16px',
       fontFamily: 'Verdana',
@@ -352,46 +304,38 @@ private getInfoText(imageKey: string): string {
       const labelWidth = difficultyLabel.width;
 
       if (clickX < labelWidth / 3) {
-        // click left
         difficultyIndex = (difficultyIndex - 1 + difficulties.length) % difficulties.length;
       } else if (clickX > labelWidth * 2 / 3) {
-        // click right
         difficultyIndex = (difficultyIndex + 1) % difficulties.length;
       }
+
+      // 更新文本和注册表状态
       updateDifficultyText();
+
+      // 立即切换到新的场景
+      const targetSceneKey = difficulties[difficultyIndex].toLowerCase().replace(' ', '');
+      console.log(`Switching to scene: ${targetSceneKey}`);
+      
+      if (this.scene.key === targetSceneKey) {
+        this.scene.restart(); // 当前关卡重新加载
+      } else {
+        this.scene.stop(this.scene.key);
+        this.scene.start(targetSceneKey);
+      }
     });
 
-    updateDifficultyText(); // initialize once
+    updateDifficultyText(); // 初始化
 
-  const startButton = this.add.text(-50, 100, '▶ Change Level', {
-    fontSize: '18px',
-    fontFamily: 'Verdana',
-    color: '#ffffff',
-    backgroundColor: '#333',
-    padding: { x: 10, y: 5 },
-  })
-  .setInteractive()
-  .setScrollFactor(0)
-  .setDepth(2000);
+    this.biasedAgentsStatusText = this.add.text(-50, 100, this.getBiasedAgentsStatusText(), {
+      fontSize: '18px',
+      fontFamily: 'Verdana', 
+      color: '#ffff00',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      padding: { x: 8, y: 4 }
+    })
+    .setScrollFactor(0)
+    .setDepth(2000);
 
-  startButton.on('pointerdown', () => {
-    const selected = this.registry.get('gameDifficulty'); // e.g., "level 2"
-    const targetSceneKey = selected.toLowerCase().replace(' ', ''); // e.g., "level2"
-
-    console.log(`Switching to scene: ${targetSceneKey}`);
-
-    if (this.scene.key === targetSceneKey) {
-      this.scene.restart();
-    } else {
-      this.scene.stop(this.scene.key);
-      this.scene.start(targetSceneKey);
-    }
-  });
-
-
-
-
-    
 
     setupScene.call(this, "office");
 
@@ -735,22 +679,26 @@ private getInfoText(imageKey: string): string {
     }
 
 
-  // 获取 tilemap 的尺寸
-  const mapWidth = this.tilemap.widthInPixels;
-  const mapHeight = this.tilemap.heightInPixels;
+    // 获取 tilemap 的尺寸
+    const mapWidth = this.tilemap.widthInPixels;
+    const mapHeight = this.tilemap.heightInPixels;
 
-  // 获取画布的尺寸
-  const canvasWidth = this.scale.width;
-  const canvasHeight = this.scale.height;
+    // 获取画布的尺寸
+    const canvasWidth = this.scale.width;
+    const canvasHeight = this.scale.height;
 
-  // 计算缩放比例
-  const zoomX = canvasWidth / mapWidth;
-  const zoomY = canvasHeight / mapHeight;
-  const zoom = Math.min(zoomX, zoomY);
+    // 计算缩放比例
+    const zoomX = canvasWidth / mapWidth;
+    const zoomY = canvasHeight / mapHeight;
+    const zoom = Math.min(zoomX, zoomY);
 
-  // 设置摄像头缩放和中心
-  this.cameras.main.setZoom(zoom);
-  this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
+    // 设置摄像头缩放和中心
+    this.cameras.main.setZoom(zoom);
+    this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
+
+    this.events.on('level-complete', () => {
+      this.createNextLevelButton();
+    });
 
   }
 
@@ -800,6 +748,8 @@ return result;
 }
 
   update() {
+    this.updateBiasedAgentsStatusText();
+
     setZonesExitingDecoration(this.parallelZones, this.agentGroup);
     setZonesExitingDecoration(this.votingZones, this.agentGroup);
     setZonesExitingDecoration(this.chainingZones, this.agentGroup);
@@ -1126,8 +1076,9 @@ return result;
           scoreData.writing_reasons,
           scoreData.coding_reasons
         );
-      
 
+        this.events.emit('level-complete');
+        
         console.log("first output", firstOutput);
         console.log("finalDecision", secondOutput);
         console.log("finalDecision2", finalOutput);
@@ -1139,9 +1090,10 @@ return result;
 
   if (
     this.registry.get('isWorkflowRunning') === false &&
-    !areAllZonesOccupied(this.parallelZones) &&
-    !areAllZonesOccupied(this.votingZones) &&
-    !areAllZonesOccupied(this.routeZones)
+    !areAllZonesOccupied(this.parallelZones) ||
+    !areAllZonesOccupied(this.votingZones) ||
+    !areAllZonesOccupied(this.routeZones) ||
+    !this.canStartGame() // 添加这个条件
   ) {
     this.registry.set('currentPattern', "");
     this.isWorkflowAvailable = false;
@@ -1154,6 +1106,11 @@ return result;
     if (this.debateStartLabel) {
       this.debateStartLabel.destroy();
       this.debateStartLabel = undefined;
+    }
+
+    if (this.selectedText) {
+      this.selectedText.destroy();
+      this.selectedText = undefined;
     }
   }
 
@@ -1297,6 +1254,53 @@ return result;
     this.startWorkflowBtn.on("pointerdown", newEvent);
     this.startWorkflowLabel.setText(eventName);
   }
+
+  private createNextLevelButton() {
+  const screenRightX = this.cameras.main.width - 52;
+  const screenCenterY = this.cameras.main.height - 150;
+
+  const bg = this.add.rectangle(screenRightX, screenCenterY, 200, 60, 0x112200)
+    .setScrollFactor(0)
+    .setDepth(1999)
+    .setStrokeStyle(3, 0xffffff)
+    .setOrigin(0.5)
+    .setAlpha(0);
+
+  const nextLevelBtn = this.add.text(screenRightX, screenCenterY, '▶ Next Level', {
+    fontSize: '22px',
+    fontFamily: 'Verdana',
+    backgroundColor: '#2c2a37',
+    color: '#ffffff',
+    padding: { x: 16, y: 8 },
+    stroke: '#ffffff',
+    strokeThickness: 2,
+  })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setAlpha(0)
+    .setInteractive();
+
+  this.tweens.add({
+    targets: [bg, nextLevelBtn],
+    alpha: 1,
+    duration: 600,
+    ease: 'Power2',
+  });
+
+  this.tweens.add({
+    targets: nextLevelBtn,
+    scale: { from: 1, to: 1.05 },
+    duration: 600,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut',
+  });
+
+  nextLevelBtn.on('pointerdown', () => {
+    this.scene.start('level1');
+  });
+}
 
   // Ensure this code is inside the `create` method after initializing `this.baseBallBtn`
 

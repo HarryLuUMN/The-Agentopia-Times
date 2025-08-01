@@ -60,17 +60,6 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
     this.name = name;
     this.persona = persona;
-
-    // this.nameTag = scene.add.text(x, y - 20, name, {
-    //     fontSize: '14px',
-    //     color: '#ffffff',
-    //     backgroundColor: '#00000088',
-    //     padding: { x: 4, y: 2 },
-    //     align: 'center',
-    //   }).setOrigin(0.5, 1); 
-
-    // this.nameTag.setDepth(10);
-    
     // Add the sprite to the scene
     scene.add.existing(this);
 
@@ -100,28 +89,6 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
     this.setInteractive({ useHandCursor: true, draggable: true }); // 允许拖拽
     scene.input.setDraggable(this);
-
-    // 监听拖拽事件
-    // scene.input.on('dragstart', (pointer:any, gameObject:any) => {
-    //   if (gameObject === this) {
-    //     this.setTint(0xff0000); // 拖拽开始时变红
-    //   }
-    // });
-
-    // scene.input.on('drag', (pointer:any, gameObject:any, dragX:number, dragY:number) => {
-    //   if (gameObject === this) {
-    //     this.x = dragX;
-    //     this.y = dragY;
-    //     // this.nameTag.setPosition(this.x, this.y - 25); 
-    //   }
-    // });
-
-    //     scene.input.on('dragend', (pointer:any, gameObject:any) => {
-    //   if (gameObject === this) {
-    //     this.clearTint(); // 结束拖A拽后恢复原色
-    //   }
-    // });
-
 
     scene.input.on('dragstart', (pointer: any, gameObject: any) => {
       if (gameObject === this) {

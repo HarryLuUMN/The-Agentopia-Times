@@ -9,6 +9,7 @@ import * as vega from 'vega';
 import * as vegaLite from 'vega-lite';
 import vegaEmbed from 'vega-embed';
 import { BASEBALL_PROMPT } from './prompts';
+import { getVisualizationData } from '../vega/visualizationData';
 
 (window as any).vega = vega;
 (window as any).vegaLite = vegaLite;
@@ -53,11 +54,16 @@ export async function generateChartImage(scene: any, agent: any) {
   let dataSample = baseballSample;
   let dataPath = "./data/baseball.csv";
 
+  let dataKey = 'baseball';
+
   
   if(scene.registry.get('currentDataset').includes("Kidney")){
     dataSample = kidneySample;
     dataPath = "./data/kidney.csv";
+    dataKey = 'kidney';
   }
+
+  const dataSummary = getVisualizationData(dataKey);
 
   const llm = initializeLLM();
   const maxRetries = 3;
@@ -68,10 +74,12 @@ export async function generateChartImage(scene: any, agent: any) {
     attempt++;
 
     const promptForLLM = `
-  Generate a data visualization with following description:
-    Create a visualization that is engaging and can effective communicate the truth behind the data.
-    You can use vega-lite visualization grammar for guidance but use d3.js to implement it.
-    
+  Please generate a Vega-Lite chart using the provided data.
+
+Only return the Vega-Lite code using the provided template.
+
+The data is already inserted as \`"values": ${dataSummary}\` in the template.
+Do not modify the data, and do not invent any values.
   ${lastError ? `5. ERROR FIXING: Correct these issues from last attempt:
     - ${lastError}
     - Specifically ensure: ${getSpecificFix(lastError)}` : ''}
@@ -97,42 +105,27 @@ export async function generateChartImage(scene: any, agent: any) {
     `;
   }
 
+  console.log("data summary", dataSummary);
+
     const result = await llm.invoke([
       { role: "system", content: `
           You are a vegalite and visualization expert.
-          You need to generate three charts based on the given dataset.
-          You should have one visualization that gives a general overview of the data(for is_hit and success, you need to show the number of hits or success, don't just aggregate them show the number of record).,
-          When visualizing fields like is_hit or success, always aggregate by sum, not by count, unless otherwise specified. Treat them as numeric counts.
-          You should have another two visualizations that focus on each subgroup of the data(you should visualize each data points in the subgroup).
-          For example, if the data is about baseball players, you can have one visualization that shows the overall performance of all players, 
-          and another two visualizations show the performance of each player(first visualization is an overview, second is Jeter, third is Justice).
-          Generate only the JavaScript code for a visualization we need created for a given dataset, 
-          ${BASEBALL_PROMPT}
-          Your code should start like this(PARAMETER: means you can change the number on that line): 
+          You need to genrate a vega-lite stacked bar chart with vega-lite by using given template and data summary.
 
-          You should follow these statements with highest priority(if there're no statements, just ignore that): 
-          ${bias}
+          Visualize the following data:
+          ${dataSummary}
+
+          Don't change the data in the template, just use it as is.
+
+          Using the following template:
 
           const spec = {
             "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-            "description": write your description here,
-            "background": "#f9f6ef",
             "data": {
-              "url": "${dataPath}",
-              "format": {
-                "type": "csv"
-              }
+              "values": ${dataSummary}
             },
             ......
           };
-
-          const specSubgroup1 = {
-            ......
-          }
-
-          const specSubgroup2 = {
-            ......
-          }
 
           
           vegaEmbed('#test-chart', spec, {
@@ -141,23 +134,8 @@ export async function generateChartImage(scene: any, agent: any) {
             scaleFactor: 2
           });
 
-          vegaEmbed('#test-chart1', spec, {
-            renderer: "canvas",
-            actions: true,
-            scaleFactor: 2
-          });
 
-          vegaEmbed('#test-chart2', spec, {
-            renderer: "canvas",
-            actions: true,
-            scaleFactor: 2
-          });
-
-
-          Here is a part of the data, which helps you better implement the visualization:
-          ${dataSample}
-          
-          based on the following description:
+          Only return the vega-lite code, without any explanation or additional text.
         ` 
       },
       {
@@ -173,15 +151,15 @@ export async function generateChartImage(scene: any, agent: any) {
 
     console.log("checking for code", attempt, check.ok, check.error, d3Code);
 
-    if (check.ok) {
+//    if (check.ok) {
       console.log("Generated valid D3.js code on attempt", attempt);
       EventBus.emit("d3-code", { d3Code: d3Code, id: chartId});
       return {chartId, d3Code};
       // return d3Code;
-    } else {
-      console.warn(`Attempt ${attempt} failed:`, check.error);
-      lastError = check.error || "Unknown error";
-    }
+    // } else {
+    //   console.warn(`Attempt ${attempt} failed:`, check.error);
+    //   lastError = check.error || "Unknown error";
+    // }
   }
 
   // All attempts failed

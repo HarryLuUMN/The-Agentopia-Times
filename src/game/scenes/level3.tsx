@@ -28,6 +28,8 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
+import { saveHistory, createHistoryButton } from './levelHelper';
+
 const level = "level3"
 
 
@@ -82,8 +84,8 @@ export class Level3 extends ParentScene {
   private selectedText?: Phaser.GameObjects.Text;
   private selectedDataset: string = "none";
 
-    private requiredBiasedAgents: number = 3; // the number of the biased agents in this level
-    private biasedAgentsStatusText!: Phaser.GameObjects.Text;
+    // private requiredBiasedAgents: number = 1; // the number of the biased agents in this level
+    // private biasedAgentsStatusText!: Phaser.GameObjects.Text;
 
   private attachInfoIcon(
     target: Phaser.GameObjects.Image,
@@ -183,30 +185,30 @@ export class Level3 extends ParentScene {
     }
   }
 
-  // 获取biased agents状态文本
-  private getBiasedAgentsStatusText(): string {
-    const remaining = Math.max(0, this.requiredBiasedAgents - Agent.biasedAgentsCount);
+  // // 获取biased agents状态文本
+  // private getBiasedAgentsStatusText(): string {
+  //   const remaining = Math.max(0, this.requiredBiasedAgents - Agent.biasedAgentsCount);
     
-    if (remaining > 0) {
-      return `You need to add a ${remaining} bias agent to start the game.`;
-    } else {
-      return `✓ Number of biased agents meets requirements (${Agent.biasedAgentsCount}/${this.requiredBiasedAgents})`;
-    }
-  }
+  //   if (remaining > 0) {
+  //     return `You need to add a ${remaining} bias agent to start the game.`;
+  //   } else {
+  //     return `✓ Number of biased agents meets requirements (${Agent.biasedAgentsCount}/${this.requiredBiasedAgents})`;
+  //   }
+  // }
 
-  private updateBiasedAgentsStatusText() {
-    this.biasedAgentsStatusText.setText(this.getBiasedAgentsStatusText());
+  // private updateBiasedAgentsStatusText() {
+  //   this.biasedAgentsStatusText.setText(this.getBiasedAgentsStatusText());
     
-    if (Agent.biasedAgentsCount >= this.requiredBiasedAgents) {
-      this.biasedAgentsStatusText.setColor('#00ff00');
-    } else {
-      this.biasedAgentsStatusText.setColor('#ffff00');
-    }
-  }
+  //   if (Agent.biasedAgentsCount >= this.requiredBiasedAgents) {
+  //     this.biasedAgentsStatusText.setColor('#00ff00');
+  //   } else {
+  //     this.biasedAgentsStatusText.setColor('#ffff00');
+  //   }
+  // }
 
-  private canStartGame(): boolean {
-    return Agent.biasedAgentsCount >= this.requiredBiasedAgents;
-  }
+  // private canStartGame(): boolean {
+  //   return Agent.biasedAgentsCount >= this.requiredBiasedAgents;
+  // }
 
   constructor() {
     super(level);
@@ -223,6 +225,14 @@ export class Level3 extends ParentScene {
 
   create() {
       Agent.resetBiasedAgentsCount(); // reset the count of biased agents
+
+      this.time.delayedCall(100, () => {
+        const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
+        if (agentsArray.length > 0) {
+          const randomAgent = Phaser.Utils.Array.GetRandom(agentsArray);
+          randomAgent.setToBiased();
+        }
+      });
     
       this.registry.set('isWorkflowRunning', false);
       this.registry.set('currentPattern', "");
@@ -326,18 +336,18 @@ export class Level3 extends ParentScene {
 
     updateDifficultyText(); // 初始化
 
-    this.biasedAgentsStatusText = this.add.text(-50, 100, this.getBiasedAgentsStatusText(), {
-      fontSize: '18px',
-      fontFamily: 'Verdana', 
-      color: '#ffff00',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      padding: { x: 8, y: 4 }
-    })
-    .setScrollFactor(0)
-    .setDepth(2000);
+    // this.biasedAgentsStatusText = this.add.text(-50, 100, this.getBiasedAgentsStatusText(), {
+    //   fontSize: '18px',
+    //   fontFamily: 'Verdana', 
+    //   color: '#ffff00',
+    //   backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    //   padding: { x: 8, y: 4 }
+    // })
+    // .setScrollFactor(0)
+    // .setDepth(2000);
 
 
-    setupScene.call(this, "office");
+    setupScene.call(this, "level3_office");
 
     // register a global variable
     // this.registry.set('isWorkflowRunning', false);
@@ -700,6 +710,8 @@ export class Level3 extends ParentScene {
       this.createNextLevelButton();
     });
 
+    createHistoryButton(this, "level2");
+
   }
 
   private async choosePattern(pattern: string) {
@@ -748,7 +760,7 @@ return result;
 }
 
   update() {
-    this.updateBiasedAgentsStatusText();
+    // this.updateBiasedAgentsStatusText();
 
     setZonesExitingDecoration(this.parallelZones, this.agentGroup);
     setZonesExitingDecoration(this.votingZones, this.agentGroup);
@@ -765,7 +777,7 @@ return result;
   ) {
     this.registry.set('currentPattern', 'parallel');
     this.isWorkflowAvailable = true;
-    console.log("All zones are occupied!");
+    // console.log("All zones are occupied!");
     // create a start workflow button
     this.debateStartBtn = this.add
     .image(0, 330, 'start')
@@ -843,7 +855,7 @@ return result;
       
     }
   });
-    console.log("ready to attach info icon for baseball");
+    // console.log("ready to attach info icon for baseball");
     this.attachInfoIcon(this.baseBallBtn, 'baseball_groundtruth');
     
 
@@ -1089,11 +1101,15 @@ return result;
 
 
   if (
+    // this.registry.get('isWorkflowRunning') === false &&
+    // !areAllZonesOccupied(this.parallelZones) ||
+    // !areAllZonesOccupied(this.votingZones) ||
+    // !areAllZonesOccupied(this.routeZones) ||
+    // !this.canStartGame() // 添加这个条件
     this.registry.get('isWorkflowRunning') === false &&
-    !areAllZonesOccupied(this.parallelZones) ||
+    (!areAllZonesOccupied(this.parallelZones) ||
     !areAllZonesOccupied(this.votingZones) ||
-    !areAllZonesOccupied(this.routeZones) ||
-    !this.canStartGame() // 添加这个条件
+    !areAllZonesOccupied(this.routeZones))
   ) {
     this.registry.set('currentPattern', "");
     this.isWorkflowAvailable = false;

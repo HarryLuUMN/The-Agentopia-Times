@@ -35,10 +35,14 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   private wasDragged: boolean = false; // if user drag the agent now
 
   public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
+
+  public static currentBiasedAgent: Agent | null = null;
+
   
   // Add reset method of the calculation of the biased agents
   public static resetBiasedAgentsCount() {
     Agent.biasedAgentsCount = 0;
+    Agent.currentBiasedAgent = null;
   }
 
 
@@ -260,51 +264,56 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
       if (gameObject === this) {
         console.log(`Agent ${this.name} clicked!`);
-        // this.changeNameTagColor('#ff00ff'); 
-        if(!this.isBiased){
-          // update to biased agent
-          // choose the designated bias by occupation
-          this.name = "Biased " + this.name;
-          // this.nameTag.setText(this.name);
-          this.isBiased = true;
-          
-          this.setTexture(key.atlas.bias);
-          this.createAnimations(key.atlas.bias);     
-          this.bias = 'biased';
-          
-          Agent.biasedAgentsCount++;
-          
-          console.log("Agent is now biased:", this.name, this.isBiased, this.getBias());     
-          // this.play("player_down");
-        } else {
-          // update to unbiased agent
-          this.name = this.name.split(' ').slice(-1).join(' ');
-          // this.nameTag.setText(this.name);
-          this.isBiased = false;
 
-          this.setTexture(key.atlas.player);
-          this.createAnimations(key.atlas.player);
-          // this.play("player_down");
+        // If there is already another biased agent, restore it first.        
+        if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
+          Agent.currentBiasedAgent.setToUnbiased();
         }
-        // console.log("Current biased agents count:", Agent.biasedAgentsCount);
+
+        if (!this.isBiased) {
+          // Set to biased
+          this.name = "Biased " + this.name;
+          this.isBiased = true;
+          this.setTexture(key.atlas.bias);
+          this.createAnimations(key.atlas.bias);
+          this.bias = 'biased';
+          Agent.biasedAgentsCount = 1;
+          Agent.currentBiasedAgent = this;
+
+          console.log("Agent is now biased:", this.name);
+        }
       }
     }
 
-    public setToBiased(){
-        console.log(`Agent ${this.name} clicked!`);
-        // this.changeNameTagColor('#ff00ff'); 
-          // update to biased agent
-          // choose the designated bias by occupation
-          this.name = "Biased " + this.name;
-          // this.nameTag.setText(this.name);
-          this.isBiased = true;
-          
-          this.setTexture(key.atlas.bias);
-          this.createAnimations(key.atlas.bias);          
-          // this.play("player_down");
-          this.bias = 'biased';
-          console.log("Agent is now biased:", this.name, this.isBiased, this.getBias());
+    // Add method to revert to normal agent
+    public setToUnbiased() {
+      if (this.isBiased) {
+        this.name = this.name.replace(/^Biased\s+/, "");
+        this.isBiased = false;
+        this.setTexture(key.atlas.player);
+        this.createAnimations(key.atlas.player);
+        Agent.biasedAgentsCount = 0;
+        Agent.currentBiasedAgent = null;
+
+        console.log("Agent is now unbiased:", this.name);
+      }
     }
+
+    public setToBiased() {
+      if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
+        Agent.currentBiasedAgent.setToUnbiased();
+      }
+      this.name = "Biased " + this.name;
+      this.isBiased = true;
+      this.setTexture(key.atlas.bias);
+      this.createAnimations(key.atlas.bias);
+      this.bias = 'biased';
+      Agent.biasedAgentsCount = 1;
+      Agent.currentBiasedAgent = this;
+
+      console.log("Agent is now biased:", this.name);
+    }
+
 
     private createWorkAnimations(atlasKey: string) {
 

@@ -41,7 +41,10 @@ const scene = {
 
 const tilemap = {
   tuxemon: 'tuxemon',
-  office: 'office',
+  // office: 'office',
+  level1_office: 'level1_office',
+  level2_office: 'level2_office',
+  level3_office: 'level3_office',
   room_builder_office: 'room_builder_office',
   interior: 'interior',
   exterior: 'exterior',

@@ -30,8 +30,8 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 import { saveHistory, createHistoryButton } from './levelHelper';
 
+const level = "level3"
 
-const level = "level1"
 
 export interface Zone {
   zone: Phaser.GameObjects.Zone;
@@ -39,7 +39,7 @@ export interface Zone {
   agentsInside: Set<string>;
 }
 
-export class Level1 extends ParentScene {
+export class Level3 extends ParentScene {
 
   private parrellePositionGroup!: Phaser.Physics.Arcade.StaticGroup;
   private agentList: Map<string, Agent> = new Map();
@@ -84,30 +84,37 @@ export class Level1 extends ParentScene {
   private selectedText?: Phaser.GameObjects.Text;
   private selectedDataset: string = "none";
 
+    // private requiredBiasedAgents: number = 1; // the number of the biased agents in this level
+    // private biasedAgentsStatusText!: Phaser.GameObjects.Text;
+
   private attachInfoIcon(
     target: Phaser.GameObjects.Image,
     imageKey: string,
     offsetX = 35,
     offsetY = -20
-  ) {
-    const icon = this.add.text(
-      target.x + offsetX,
-      target.y + offsetY,
-      '🛈',
-      {
-        fontSize: '25px',
-        color: '#ffffff',
-        // backgroundColor: '#0000ff',
-        fontStyle: 'normal',
-        padding: { x: 8, y: 6 },
-        fontFamily: 'Verdana',
-      }
-    )
-    .setScrollFactor(0)
-    .setDepth(9999)
-    .setOrigin(0.5)
-    .setResolution(2)
-    .setInteractive();
+  ){
+      const icon = this.add.text(
+        target.x + offsetX,
+        target.y + offsetY,
+        '🛈',
+        {
+          fontSize: '25px',
+          color: '#ffffff',
+          // backgroundColor: '#0000ff',
+          fontStyle: 'normal',
+          padding: { x: 8, y: 6 },
+          fontFamily: 'Verdana',
+        }
+      )
+      .setScrollFactor(0)
+      .setDepth(9999)
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setInteractive();
+
+      // console.log(
+      //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
+      // );
 
     icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
       const hoverWindowX = pointer.x + 230;
@@ -178,6 +185,31 @@ export class Level1 extends ParentScene {
     }
   }
 
+  // // 获取biased agents状态文本
+  // private getBiasedAgentsStatusText(): string {
+  //   const remaining = Math.max(0, this.requiredBiasedAgents - Agent.biasedAgentsCount);
+    
+  //   if (remaining > 0) {
+  //     return `You need to add a ${remaining} bias agent to start the game.`;
+  //   } else {
+  //     return `✓ Number of biased agents meets requirements (${Agent.biasedAgentsCount}/${this.requiredBiasedAgents})`;
+  //   }
+  // }
+
+  // private updateBiasedAgentsStatusText() {
+  //   this.biasedAgentsStatusText.setText(this.getBiasedAgentsStatusText());
+    
+  //   if (Agent.biasedAgentsCount >= this.requiredBiasedAgents) {
+  //     this.biasedAgentsStatusText.setColor('#00ff00');
+  //   } else {
+  //     this.biasedAgentsStatusText.setColor('#ffff00');
+  //   }
+  // }
+
+  // private canStartGame(): boolean {
+  //   return Agent.biasedAgentsCount >= this.requiredBiasedAgents;
+  // }
+
   constructor() {
     super(level);
     this.sceneName = "";
@@ -194,23 +226,24 @@ export class Level1 extends ParentScene {
   create() {
       Agent.resetBiasedAgentsCount(); // reset the count of biased agents
 
-      // Randomly select an agent to be biased
-      this.time.delayedCall(100, () => { // Delay to make sure the agent has been generated
+      this.time.delayedCall(100, () => {
         const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
         if (agentsArray.length > 0) {
           const randomAgent = Phaser.Utils.Array.GetRandom(agentsArray);
           randomAgent.setToBiased();
         }
       });
-
+    
       this.registry.set('isWorkflowRunning', false);
       this.registry.set('currentPattern', "");
       this.registry.set('currentDataset', 'baseball');
       this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
 
+      // ✅ 重置实例变量
       this.isWorkflowAvailable = false;
       this.selectedDataset = "none";
 
+      // ✅ 清理可能存在的按钮引用
       this.debateStartBtn = undefined;
       this.baseBallBtn = undefined;
       this.kidneyBtn = undefined;
@@ -244,8 +277,8 @@ export class Level1 extends ParentScene {
       window.location.reload();
     });
 
-    // Level 1: Factual Contradiction
-    this.add.text(-50, 20, 'Level 1: Factual Contradiction', {
+    // Level 3: Framing & Ambiguity
+    this.add.text(-50, 20, 'Level 3: Framing & Ambiguity', {
       fontSize: '18px',
       fontFamily: 'Verdana',
       color: '#ffffff',
@@ -254,9 +287,10 @@ export class Level1 extends ParentScene {
     })
     .setScrollFactor(0)
     .setDepth(2000);
-    
+
+
     const difficulties = ['level 1', 'level 2', 'level 3'];
-    let difficultyIndex = 0; // default is 'medium'
+    let difficultyIndex = 2;
 
     const difficultyLabel = this.add.text(-50, 60, '', {
       fontSize: '16px',
@@ -288,20 +322,32 @@ export class Level1 extends ParentScene {
       // 更新文本和注册表状态
       updateDifficultyText();
 
+      // 立即切换到新的场景
       const targetSceneKey = difficulties[difficultyIndex].toLowerCase().replace(' ', '');
       console.log(`Switching to scene: ${targetSceneKey}`);
       
       if (this.scene.key === targetSceneKey) {
-        this.scene.restart();
+        this.scene.restart(); // 当前关卡重新加载
       } else {
         this.scene.stop(this.scene.key);
         this.scene.start(targetSceneKey);
       }
     });
 
-    updateDifficultyText();
+    updateDifficultyText(); // 初始化
 
-    setupScene.call(this, "level1_office");
+    // this.biasedAgentsStatusText = this.add.text(-50, 100, this.getBiasedAgentsStatusText(), {
+    //   fontSize: '18px',
+    //   fontFamily: 'Verdana', 
+    //   color: '#ffff00',
+    //   backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    //   padding: { x: 8, y: 4 }
+    // })
+    // .setScrollFactor(0)
+    // .setDepth(2000);
+
+
+    setupScene.call(this, "level3_office");
 
     // register a global variable
     // this.registry.set('isWorkflowRunning', false);
@@ -664,7 +710,8 @@ export class Level1 extends ParentScene {
       this.createNextLevelButton();
     });
 
-    createHistoryButton(this, "level1");
+    createHistoryButton(this, "level2");
+
   }
 
   private async choosePattern(pattern: string) {
@@ -713,6 +760,8 @@ return result;
 }
 
   update() {
+    // this.updateBiasedAgentsStatusText();
+
     setZonesExitingDecoration(this.parallelZones, this.agentGroup);
     setZonesExitingDecoration(this.votingZones, this.agentGroup);
     setZonesExitingDecoration(this.chainingZones, this.agentGroup);
@@ -724,7 +773,6 @@ return result;
     (areAllZonesOccupied(this.parallelZones)
      && !this.isWorkflowAvailable
      && !this.registry.get('isWorkflowRunning')
-    //  && this.canStartGame()
     )
   ) {
     this.registry.set('currentPattern', 'parallel');
@@ -902,26 +950,27 @@ return result;
         
       }
     });
-    // console.log("ready to attach info icon for kidney");
+    console.log("ready to attach info icon for kidney");
 
     this.attachInfoIcon(this.kidneyBtn, 'kidney_groundtruth');
 
     this.debateStartBtn.on('pointerdown', async () => {
     
-      // Reset old UIs(ReportUI and ScoresUI)
-      resetReportIcons(this);
-      resetScoreUI(this);
+    // Reset old UIs(ReportUI and ScoresUI)
+    resetReportIcons(this);
+    resetScoreUI(this);
+
 
       this.registry.set('isWorkflowRunning', true);
       console.log("btn pre-start zones data", this.parallelZones);
-      const agentsInfo = getAllAgents(this.parallelZones);
-      console.log("agentsInfo", agentsInfo);
+       const agentsInfo = getAllAgents(this.parallelZones);
+       console.log("agentsInfo", agentsInfo);
        
-      const agentName1 = agentsInfo[0].agents[0];
-      const agentName2 = agentsInfo[1].agents[0];
+       const agentName1 = agentsInfo[0].agents[0];
+        const agentName2 = agentsInfo[1].agents[0];
 
-      const agent1 = this.agentList.get(agentName1);
-      const agent2 = this.agentList.get(agentName2);
+        const agent1 = this.agentList.get(agentName1);
+        const agent2 = this.agentList.get(agentName2);
 
         console.log("agent1", agent1, agent1?.x, agent1?.y);
         console.log("agent2", agent2, agent2?.x, agent2?.y);
@@ -1047,29 +1096,16 @@ return result;
         console.log("finalDecision2", finalOutput);
 
         eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
-    
-        // save the scores to history
-        saveHistory("level1", scoreData.overall_score);
-
-      });
+    });
   } 
 
 
-  // if(
-  //   this.registry.get('isWorkflowRunning')===false
-  //   &&!areAllZonesOccupied(this.parallelZones)
-  //   &&!areAllZonesOccupied(this.votingZones)
-  //   &&!areAllZonesOccupied(this.routeZones)
-  // ){
-  //   this.registry.set('currentPattern', "");
-  //   this.isWorkflowAvailable = false;
-  //   if(this.debateStartBtn){
-  //     this.debateStartBtn.destroy();
-  //     this.debateStartLabel.destroy();
-  //   }
-  // }
-
   if (
+    // this.registry.get('isWorkflowRunning') === false &&
+    // !areAllZonesOccupied(this.parallelZones) ||
+    // !areAllZonesOccupied(this.votingZones) ||
+    // !areAllZonesOccupied(this.routeZones) ||
+    // !this.canStartGame() // 添加这个条件
     this.registry.get('isWorkflowRunning') === false &&
     (!areAllZonesOccupied(this.parallelZones) ||
     !areAllZonesOccupied(this.votingZones) ||
@@ -1088,22 +1124,11 @@ return result;
       this.debateStartLabel = undefined;
     }
 
-    // if (this.baseBallBtn) {
-    //   this.baseBallBtn.destroy();
-    //   this.baseBallBtn = undefined;
-    // }
-
-    // if (this.kidneyBtn) {
-    //   this.kidneyBtn.destroy();
-    //   this.kidneyBtn = undefined;
-    // }
-
     if (this.selectedText) {
       this.selectedText.destroy();
       this.selectedText = undefined;
     }
   }
-
 
 
     this.playerControlledAgent =
@@ -1289,7 +1314,7 @@ return result;
   });
 
   nextLevelBtn.on('pointerdown', () => {
-    this.scene.start('level2');
+    this.scene.start('level1');
   });
 }
 

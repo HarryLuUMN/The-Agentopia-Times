@@ -25,6 +25,7 @@ export function constructSingleAgentGraph(
     thisRoomDestination: any,
     destination: any,
     index: number,
+    level: string
 ) {
     const graph = new StateGraph(SingleAgentGraphAnnotation);
 
@@ -37,6 +38,7 @@ export function constructSingleAgentGraph(
             thisRoomDestination,
             destination,
             index,
+            level
         ),
     );
 
@@ -53,6 +55,7 @@ export function createAgent(
     thisRoomDestination: any,
     destination: any,
     index: number,
+    level: string
 ) {
     return async function workAgent(
         state: typeof SingleAgentGraphAnnotation.State,
@@ -83,7 +86,7 @@ export function createAgent(
         if (index === 0) {
             mssg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
-            mssg = await startDataFetcher(scene, agent);
+            mssg = await startDataFetcher(scene, agent, level);
 
             let userContent =
                 'based on the given insights, generate a consice news article to summarize that(words<200)\n' +

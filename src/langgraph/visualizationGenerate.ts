@@ -84,7 +84,7 @@ export async function generateChartImage(scene: any, agent: any) {
 
   if(agent.getBias()!==''){
     specPrompt = `
-      generate two stacked bar chart, each stacked bar chart shows the overall proportion for each ${facetVar}
+      generate two pie chart, each pie chart shows the overall proportion for each ${facetVar}
     `;
     systemPrompt = generateBiasedPrompt(facetVar, dataSummary);
   }

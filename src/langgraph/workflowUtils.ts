@@ -279,7 +279,7 @@ export function createScoreUI(
     padding: { x: 20, y: 16 },
     wordWrap: { width: 320 },
     align: "left",
-  }).setScrollFactor(0).setDepth(2000).setVisible(false).setResolution(2);
+  }).setScrollFactor(0).setDepth(2002).setVisible(false).setResolution(2);
 
   const textBounds = scene.scorePanel.getBounds();
   const panelWidth = textBounds.width + 20;
@@ -290,7 +290,7 @@ export function createScoreUI(
   scene.scorePanelBg = scene.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x000000, 0.5)
     .setStrokeStyle(2, 0xffffff)
     .setScrollFactor(0)
-    .setDepth(1999)
+    .setDepth(2001)
     .setVisible(false);
 }
 

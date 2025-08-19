@@ -466,7 +466,7 @@ export function startScoreComputer(judgeData: {
   const writingNumeric = parseScore(judgeData.writing_score); // 8
   const codingNumeric = parseScore(judgeData.coding_score);   // 7
 
-  const overall = ((writingNumeric * 2 + codingNumeric * 0.5) / 25 * 10).toFixed(2);
+  const overall = ((writingNumeric * 1.5 + codingNumeric * 1) / 25 * 10).toFixed(2);
 
   return {
     overall_score: overall,
@@ -512,14 +512,16 @@ export async function createVisualizationJudge(message: string) {
 
       ### Requirements:
 
-      - Use the 6 evaluation dimensions: Structure, Encoding, Mapping, Interaction, Validity, Clarity.
-      - Rate the overall visualization from 1 to 10.
-      - In **reasons[]**, include **short concise deduction points**, like "- Axis label missing" or "- Tooltip only, no filtering".
-      - In **comments[]**, explain the evaluation with 6–8 complete sentences.
-      - Avoid markdown, no HTML, no extra explanations or wrapping.
-      - Do not echo or paraphrase the input.
-      - Only return the object — no other explanation.
-
+      - use the following criteria to evaluate the visualization:
+        - if using four sub-charts as visualization, then rate it highly(e.g., 10).
+        - if it only using two, then rate it low(e.g., 1).
+      - after evaluating the baseline score, consider the following factors for potential bonus or penalty points:  
+        - clear labels: +2
+        - effective use of color: +2
+        - bug free on visualziation: +2
+        - overall coherence: +2
+        - visual engaging: +2
+      Also included your reasons and comments for each bonus and criteria in the output json data structure. 
       ---
 
       Evaluate the following Vega-Lite spec:

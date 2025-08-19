@@ -31,6 +31,7 @@ const image = {
   sequential: "sequential",
   voting: "voting",
   single_agent: "single_agent",
+  pdfIcon: 'pdfIcon',
 } as const;
 
 const scene = {

@@ -28,7 +28,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton } from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict} from './levelHelper';
 
 const level = "level3"
 
@@ -260,6 +260,9 @@ export class Level3 extends ParentScene {
     // Initialize the HUD array
     this.hudElements = [];
 
+    createSimpleInstructionHUD(this); // Create a top note bar
+
+
     // reset button
     const resetButton = this.add.text(-45, 220, '⟳ Reset', {
       fontSize: '18px',
@@ -289,63 +292,11 @@ export class Level3 extends ParentScene {
     .setDepth(2000);
 
 
-    const difficulties = ['level 1', 'level 2', 'level 3'];
-    let difficultyIndex = 2;
+    // DifficultySelector
+    createDifficultySelector(this);
 
-    const difficultyLabel = this.add.text(-50, 60, '', {
-      fontSize: '16px',
-      fontFamily: 'Verdana',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 8, y: 4 }
-    })
-    .setScrollFactor(0)
-    .setInteractive()
-    .setDepth(2000);
-
-    const updateDifficultyText = () => {
-      const text = `Difficulty: ◀ ${difficulties[difficultyIndex].toUpperCase()} ▶`;
-      difficultyLabel.setText(text);
-      this.registry.set('gameDifficulty', difficulties[difficultyIndex]);
-    };
-
-    difficultyLabel.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      const clickX = pointer.x - difficultyLabel.x;
-      const labelWidth = difficultyLabel.width;
-
-      if (clickX < labelWidth / 3) {
-        difficultyIndex = (difficultyIndex - 1 + difficulties.length) % difficulties.length;
-      } else if (clickX > labelWidth * 2 / 3) {
-        difficultyIndex = (difficultyIndex + 1) % difficulties.length;
-      }
-
-      // 更新文本和注册表状态
-      updateDifficultyText();
-
-      // 立即切换到新的场景
-      const targetSceneKey = difficulties[difficultyIndex].toLowerCase().replace(' ', '');
-      console.log(`Switching to scene: ${targetSceneKey}`);
-      
-      if (this.scene.key === targetSceneKey) {
-        this.scene.restart(); // 当前关卡重新加载
-      } else {
-        this.scene.stop(this.scene.key);
-        this.scene.start(targetSceneKey);
-      }
-    });
-
-    updateDifficultyText(); // 初始化
-
-    // this.biasedAgentsStatusText = this.add.text(-50, 100, this.getBiasedAgentsStatusText(), {
-    //   fontSize: '18px',
-    //   fontFamily: 'Verdana', 
-    //   color: '#ffff00',
-    //   backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    //   padding: { x: 8, y: 4 }
-    // })
-    // .setScrollFactor(0)
-    // .setDepth(2000);
-
+    // PDF icon
+    addPDFIcon(this);
 
     setupScene.call(this, "level3_office");
 
@@ -1035,9 +986,20 @@ return result;
             const graph = constructSequentialGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
           } else if(workflowConfig[i] === "single_agent") {
-            console.log("construct single agent graph");
-            const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
+            // console.log("construct single agent graph");
+            // const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
+            // graphs.push(graph);
+            const roomZones = datamaps[i];
+            const chosen = pickAgentForSingleStrict(roomZones, this.agentList);
+
+            if (!chosen) {
+              console.warn("No agent available for single_agent room", i);
+              continue;
+            }
+            
+            const graph = constructSingleAgentGraph([chosen], this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
+            continue;
           }
         }
 

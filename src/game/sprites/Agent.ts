@@ -244,8 +244,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
           this.setTexture(key.atlas.bias);
           this.createAnimations(key.atlas.bias);
           this.bias = 'biased';
-          Agent.biasedAgentsCount = 1;
-          Agent.currentBiasedAgent = this;
+          // Agent.biasedAgentsCount = 1;
+          // Agent.currentBiasedAgent = this;
 
           console.log("Agent is now biased:", this.name);
         }

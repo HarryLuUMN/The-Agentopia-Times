@@ -41,8 +41,6 @@ export async function generateChartImage(scene: any, agent: any) {
 
   const chartId = `chart-${Math.random().toString(36).substr(2, 9)}`;
 
-  let dataPath = "./data/baseball.csv";
-
   let dataKey = 'baseball';
   let facetVar = 'player';
 
@@ -85,7 +83,36 @@ export async function generateChartImage(scene: any, agent: any) {
   if(agent.getBias()!==''){
     specPrompt = `
       generate two pie chart, each pie chart shows the overall proportion for each ${facetVar}
-    `;
+      Please generate a valid Vega-Lite specification for a layered pie chart that meets the following requirements:
+
+      When generating Vega or Vega-Lite specifications:
+
+Never insert a fold transform unless the dataset actually contains separate fields that must be converted into long format. If the dataset already has a categorical column (e.g., "tag": "hit" / "miss"), you must not fold over string values.
+
+Always preserve the logical data structure:
+
+Use aggregate only when you need to compute group-level totals.
+
+Use joinaggregate only when you need category-level denominators for proportions.
+
+Do not stack multiple joinaggregate steps unless absolutely required.
+
+Avoid defensive calculations (if(datum.value == undefined, 0, datum.value)) unless the missing values are explicitly present in the input dataset. Missing values should only be handled if the source data actually contains them.
+
+Before outputting the final spec, simulate the data flow in your head: ensure each field referenced in later transforms or encodings is already produced by earlier transforms.
+
+If proportions or percentages are needed:
+
+First aggregate to compute counts or totals.
+
+Then compute group totals with joinaggregate.
+
+Then calculate proportions with calculate.
+Do not use fold in this workflow if the categorical grouping field already exists.
+
+Validate that the generated spec can run without undefined fields. Any field used in encoding must either exist in the input dataset or be created by a prior transform.
+    
+      `;
     systemPrompt = generateBiasedPrompt(facetVar, dataSummary);
   }
   console.log("specPrompt", specPrompt);

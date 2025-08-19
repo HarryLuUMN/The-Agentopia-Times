@@ -1,4 +1,3 @@
-import Phaser from 'phaser';
 import { initializeLLM } from "./chainingUtils";
 import * as d3 from 'd3';
 import { EventBus } from "../game/EventBus";
@@ -46,7 +45,7 @@ export async function generateChartImage(scene: any, agent: any) {
 
   
   if(scene.registry.get('currentDataset').includes("Kidney")){
-    dataPath = "./data/kidney.csv";
+    // let dataPath = "./data/kidney.csv";
     dataKey = 'kidney';
     facetVar = 'treatment';
   }

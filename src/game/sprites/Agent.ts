@@ -34,6 +34,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   private wasDragged: boolean = false; // if user drag the agent now
 
+  public isDrag: boolean = false; // track drag state
+
   public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
 
   public static currentBiasedAgent: Agent | null = null;

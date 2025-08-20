@@ -28,7 +28,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton } from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo  } from './levelHelper';
 
 
 const level = "level1"
@@ -227,6 +227,8 @@ export class Level1 extends ParentScene {
     // Initialize the HUD array
     this.hudElements = [];
 
+    createSimpleInstructionHUD(this); // Create a top note bar
+
     // reset button
     const resetButton = this.add.text(-45, 220, '⟳ Reset', {
       fontSize: '18px',
@@ -244,62 +246,28 @@ export class Level1 extends ParentScene {
       window.location.reload();
     });
 
-    // Level 1: Factual Contradiction
-    this.add.text(-50, 20, 'Level 1: Factual Contradiction', {
-      fontSize: '18px',
-      fontFamily: 'Verdana',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 6, y: 4 }
-    })
-    .setScrollFactor(0)
-    .setDepth(2000);
-    
-    const difficulties = ['level 1', 'level 2', 'level 3'];
-    let difficultyIndex = 0; // default is 'medium'
+    // add title bar + info icon with tooltip
+    const LEVEL_TITLE = 'Level 1: Factual Contradiction';
+    const LEVEL_INFO =
+      'Factual Contradiction\n' +
+      'This type of hallucination introduces statements that are directly opposite to the truth, such as reversing numbers, times, or causes.\n' +
+      'The goal is to recognize and correct conclusions that conflict with facts or common sense.'
+    ;
 
-    const difficultyLabel = this.add.text(-50, 60, '', {
-      fontSize: '16px',
-      fontFamily: 'Verdana',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 8, y: 4 }
-    })
-    .setScrollFactor(0)
-    .setInteractive()
-    .setDepth(2000);
-
-    const updateDifficultyText = () => {
-      const text = `Difficulty: ◀ ${difficulties[difficultyIndex].toUpperCase()} ▶`;
-      difficultyLabel.setText(text);
-      this.registry.set('gameDifficulty', difficulties[difficultyIndex]);
-    };
-
-    difficultyLabel.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      const clickX = pointer.x - difficultyLabel.x;
-      const labelWidth = difficultyLabel.width;
-
-      if (clickX < labelWidth / 3) {
-        difficultyIndex = (difficultyIndex - 1 + difficulties.length) % difficulties.length;
-      } else if (clickX > labelWidth * 2 / 3) {
-        difficultyIndex = (difficultyIndex + 1) % difficulties.length;
-      }
-
-      // 更新文本和注册表状态
-      updateDifficultyText();
-
-      const targetSceneKey = difficulties[difficultyIndex].toLowerCase().replace(' ', '');
-      console.log(`Switching to scene: ${targetSceneKey}`);
-      
-      if (this.scene.key === targetSceneKey) {
-        this.scene.restart();
-      } else {
-        this.scene.stop(this.scene.key);
-        this.scene.start(targetSceneKey);
-      }
+    addTitleWithHoverInfo(this, LEVEL_TITLE, LEVEL_INFO, {
+      x: -50,
+      y: 20,
+      depth: 2000,
     });
 
-    updateDifficultyText();
+
+    // DifficultySelector
+    createDifficultySelector(this);
+
+    // The PDF icon to open the instruction PDF
+    addPDFIcon(this);
+
+    // updateDifficultyText();
 
     setupScene.call(this, "level1_office");
 
@@ -660,11 +628,22 @@ export class Level1 extends ParentScene {
     this.cameras.main.setZoom(zoom);
     this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
-    this.events.on('level-complete', () => {
-      this.createNextLevelButton();
-    });
-
     createHistoryButton(this, "level1");
+
+    // this.events.on('level-complete', () => {
+    //   this.createNextLevelButton();
+    // });
+
+    // 原来是：this.events.on('level-complete', () => { this.createNextLevelButton(); });
+    this.events.on('level-complete', (payload?: { score: number }) => {
+      const score = payload?.score ?? this.registry.get('finalScore') ?? 0;
+
+      if (score >= 8) {
+        this.createNextLevelButton();
+      } else {
+        this.showTryAgainMessage(score); // 下面第3步新增的小函数
+      }
+    });
   }
 
   private async choosePattern(pattern: string) {
@@ -971,7 +950,6 @@ return result;
               console.log("datamap zone", zone);
               return zone.agents[0];
             });
-
           }
           console.log("agentsParameter", i, agentsParameter);
           // fetching agent prompts
@@ -986,9 +964,20 @@ return result;
             const graph = constructSequentialGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
           } else if(workflowConfig[i] === "single_agent") {
-            console.log("construct single agent graph");
-            const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
+            // console.log("construct single agent graph");
+            // const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
+            // graphs.push(graph);
+            const roomZones = datamaps[i];
+            const chosen = pickAgentForSingleStrict(roomZones, this.agentList);
+
+            if (!chosen) {
+              console.warn("No agent available for single_agent room", i);
+              continue;
+            }
+            
+            const graph = constructSingleAgentGraph([chosen], this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
+            continue;
           }
         }
 
@@ -1040,19 +1029,25 @@ return result;
           scoreData.coding_reasons
         );
 
-        this.events.emit('level-complete');
-        
-        console.log("first output", firstOutput);
-        console.log("finalDecision", secondOutput);
-        console.log("finalDecision2", finalOutput);
+        // 1) 归一化并保存最终分数，便于其他地方读取
+        const finalScore = Number(scoreData.overall_score ?? 0);
+        this.registry.set('finalScore', finalScore);
 
-        eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+        // 2) 用 Phaser 事件把分数带出去（监听里按分数决定是否创建 Next 按钮）
+        this.events.emit('level-complete', { score: finalScore });
+
+        // 3) 如果你还需要全局总线，也把分数带上（可供其它场景/模块响应）
+        eventTargetBus.dispatchEvent(
+          new CustomEvent('signal', {
+            detail: { type: 'level-complete', level: 'level1', score: finalScore }
+          })
+        );
     
         // save the scores to history
         saveHistory("level1", scoreData.overall_score);
 
       });
-  } 
+    } 
 
 
   // if(
@@ -1245,6 +1240,30 @@ return result;
     this.startWorkflowBtn.on("pointerdown", newEvent);
     this.startWorkflowLabel.setText(eventName);
   }
+
+  private showTryAgainMessage(score: number) {
+  const x = this.cameras.main.width - 52;
+  const y = this.cameras.main.height - 150;
+
+  const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
+    {
+      fontSize: '16px',
+      fontFamily: 'Verdana',
+      backgroundColor: '#5a2a2a',
+      color: '#ffffff',
+      padding: { x: 12, y: 8 },
+      stroke: '#ffffff',
+      strokeThickness: 2,
+      align: 'center'
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setAlpha(0);
+
+  this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
+}
+
 
   private createNextLevelButton() {
   const screenRightX = this.cameras.main.width - 52;

@@ -40,6 +40,9 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   public static currentBiasedAgent: Agent | null = null;
 
+
+  private agentInformation:string = "aaaaaaa";
+
   
   // Add reset method of the calculation of the biased agents
   public static resetBiasedAgentsCount() {
@@ -47,6 +50,13 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     Agent.currentBiasedAgent = null;
   }
 
+  public getAgentInformation(){
+    return this.agentInformation;
+  }
+
+  public setAgentInformation(info: string) {
+    this.agentInformation = info;
+  }
 
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
@@ -233,6 +243,9 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
       if (gameObject === this) {
         console.log(`Agent ${this.name} clicked!`);
+
+        const agentInfo = this.getAgentInformation();
+        console.log(`Agent Information: ${agentInfo}`);
 
         // If there is already another biased agent, restore it first.        
         if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {

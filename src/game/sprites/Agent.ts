@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 import { key } from '../constants';
 import { Inventory } from './Player';
+import { EventBus } from '../EventBus';
 
 enum Animation {
   Left = 'player_left',
@@ -31,6 +32,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   private instruction: string = "";
   private bias: string = "";
   private isBiased: boolean = false;
+  private mssgSprite: Phaser.GameObjects.Image | null = null;
 
   private wasDragged: boolean = false; // if user drag the agent now
 
@@ -42,6 +44,46 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
 
   private agentInformation:string = "aaaaaaa";
+
+  public addMssgSprite(scene: Phaser.Scene, texture: string, frame?: string | number) {
+  if (this.mssgSprite) {
+    console.log("Updating message sprite for agent:", this.name);
+    this.mssgSprite.setTexture(texture, frame);
+
+    this.mssgSprite.removeAllListeners();
+    this.mssgSprite.disableInteractive();
+
+    if (texture === "agent_mssg") {
+      this.mssgSprite.setInteractive({ useHandCursor: true });
+      this.mssgSprite.on('pointerdown', () => {
+        console.log(`Message sprite of ${this.name} clicked!`);
+        this.changeNameTagColor('#00ff00');
+        EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+      });
+    }
+    return;
+  }
+
+  console.log("Adding message sprite to agent:", this.name);
+  this.mssgSprite = scene.add.image(this.x, this.y, texture, frame)
+    .setOrigin(0.5, 1)
+    .setDepth(10);
+
+  if (texture === "agent_mssg") {
+    this.mssgSprite.setInteractive({ useHandCursor: true });
+    this.mssgSprite.on('pointerdown', () => {
+      console.log(`Message sprite of ${this.name} clicked!`);
+      this.changeNameTagColor('#00ff00');
+      EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+    });
+  }
+}
+
+
 
   
   // Add reset method of the calculation of the biased agents
@@ -56,6 +98,10 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   public setAgentInformation(info: string) {
     this.agentInformation = info;
+    EventBus.emit("agent-information", {
+      agent: this.name,
+      mssg: this.getAgentInformation()
+    });
   }
 
   public assignToWorkplace: boolean = false;
@@ -149,8 +195,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   }
 
-  update() {
-    // this.nameTag.setPosition(this.x, this.y - 25);
+update() {
+    this.mssgSprite?.setPosition(this.x - 15, this.y);
   }
 
   public getName(){
@@ -295,6 +341,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
       console.log("Agent is now biased:", this.name);
     }
+
+
 
 
     private createWorkAnimations(atlasKey: string) {

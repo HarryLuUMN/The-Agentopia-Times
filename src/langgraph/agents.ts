@@ -167,6 +167,8 @@ export function createJournalist(
         const originalAgent1Y = agent.y;
 
         // await updateStateIcons(zones, "mail", 0);
+        await agent.setAgentInformation(msg.content);
+        await agent.addMssgSprite(scene, "agent_mssg");
         console.log("debug agent pos", destination.x, destination.y);
         await autoControlAgent(scene, agent, tilemap, (destination.x as number), (destination.y as number), "Send Message");
         await autoControlAgent(scene, agent, tilemap, originalAgent1X, originalAgent1Y, "Return to Office");
@@ -299,6 +301,8 @@ export function createManager(
         console.log("graph:3rd agent msg:", msg.content);
         // await updateStateIcons(zones, "idle", 0);
         await agent.setAgentState("idle");
+        await agent.setAgentInformation(msg.content);
+        await agent.addMssgSprite(scene, "agent_mssg");
 
         await createReport(scene, "chaining", index, destination.x, destination.y);
         const report = await createReport(scene, "chaining", index, destination.x, destination.y);
@@ -431,7 +435,10 @@ export function createWriter(
         const originalAgent2Y = agent.y;
 
         // await updateStateIcons(zones, "mail", 1);
-        // await updateStateIcons(scene.chainingZones, "mail");     
+        // await updateStateIcons(scene.chainingZones, "mail");    
+        
+        await agent.setAgentInformation(msg.content); 
+        await agent.addMssgSprite(scene, "agent_mssg");
         
         await autoControlAgent(scene, agent, tilemap, destination.x, destination.y, "Send Report to Final Location");
         

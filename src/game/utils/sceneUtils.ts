@@ -136,6 +136,8 @@ export function addAgentsBasedOnSpawningPoints(
       bias
     );
 
+    agent.addMssgSprite(scene, "agent_idle");
+
     if(spawningPoint.name.includes("analysis_")){
       //agent.setToBiased();
     } 

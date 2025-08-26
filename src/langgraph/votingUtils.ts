@@ -100,6 +100,9 @@ export async function parallelVotingExecutor(
             msg = await generateChartImage(scene, agent);
         }
 
+        await agent.setAgentInformation(msg.content);
+        await agent.addMssgSprite(scene, "agent_mssg");
+
         // const llmPromise = llm.invoke(
         //     `write a news title for the given topic: ${datasetDescription}; The title is prepared for a news or magazine article about the dataset.`
         // );// prompt_change

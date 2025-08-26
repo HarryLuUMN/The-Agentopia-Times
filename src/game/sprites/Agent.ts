@@ -104,6 +104,68 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+public playDialogue(
+  scene: Phaser.Scene,
+  text: string,
+  speed: number = 50,
+  sentencePause: number = 1500
+) {
+  // 1. 按标点切分成句子数组（支持中英文）
+  const sentences = text.match(/[^.!?。！？]+[.!?。！？]/g) || [text];
+
+  // 2. 在 Agent 右上角添加文本
+  let textObj = scene.add.text(this.x + 40, this.y - 40, "", {
+    fontSize: "16px",
+    color: "#ffffff",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    wordWrap: { width: 200 }
+  }).setDepth(20);
+
+  let currentSentenceIndex = 0;
+  let charIndex = 0;
+  let isPaused = false;
+
+  scene.time.addEvent({
+    delay: speed,
+    loop: true,
+    callback: () => {
+      if (isPaused) return;
+
+      const sentence = sentences[currentSentenceIndex];
+
+      if (charIndex < sentence.length) {
+        // 逐字输出
+        textObj.text += sentence[charIndex];
+        charIndex++;
+      } else {
+        // 一句话播完 → 停顿 → 清空 → 下一句
+        isPaused = true;
+        scene.time.delayedCall(sentencePause, () => {
+          currentSentenceIndex++;
+          charIndex = 0;
+
+          if (currentSentenceIndex < sentences.length) {
+            textObj.text = "";   // ✅ 清空上句
+            isPaused = false;    // 开始下一句
+          } else {
+            console.log(`✅ Agent ${this.name} 所有句子播放完毕`);
+            textObj.destroy();   // 最后一条播完移除
+          }
+        });
+      }
+    }
+  });
+
+  // 让气泡位置始终跟随 Agent
+  scene.events.on("update", () => {
+    if (textObj && textObj.active) {
+      textObj.setPosition(this.x + 40, this.y - 40);
+    }
+  });
+}
+
+
+
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
     console.log(`---Step for Agent: ${this.name}---`);

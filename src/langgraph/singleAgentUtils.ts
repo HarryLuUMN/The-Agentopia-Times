@@ -128,7 +128,7 @@ export function createAgent(
 
         console.log('graph:single agent msg', mssg.content);
 
-        await agent.playDialogue(scene, mssg.content);
+        //await agent.playDialogue(scene, mssg.content);
         await agent.setAgentInformation(mssg.content);
 
         await autoControlAgent(

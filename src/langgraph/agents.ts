@@ -167,7 +167,7 @@ export function createJournalist(
         const originalAgent1Y = agent.y;
 
         // await updateStateIcons(zones, "mail", 0);
-        await agent.playDialogue(scene, msg.content);
+        //await agent.playDialogue(scene, msg.content);
         await agent.setAgentInformation(msg.content);
         await agent.addMssgSprite(scene, "agent_mssg");
         console.log("debug agent pos", destination.x, destination.y);
@@ -302,7 +302,7 @@ export function createManager(
         console.log("graph:3rd agent msg:", msg.content);
         // await updateStateIcons(zones, "idle", 0);
         await agent.setAgentState("idle");
-        await agent.playDialogue(scene, msg.content);
+        //await agent.playDialogue(scene, msg.content);
         await agent.setAgentInformation(msg.content);
         await agent.addMssgSprite(scene, "agent_mssg");
 
@@ -438,7 +438,7 @@ export function createWriter(
 
         // await updateStateIcons(zones, "mail", 1);
         // await updateStateIcons(scene.chainingZones, "mail");    
-        await agent.playDialogue(scene, msg.content);
+        //await agent.playDialogue(scene, msg.content);
         await agent.setAgentInformation(msg.content); 
         await agent.addMssgSprite(scene, "agent_mssg");
         

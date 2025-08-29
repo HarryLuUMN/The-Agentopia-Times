@@ -100,7 +100,7 @@ export async function parallelVotingExecutor(
             msg = await generateChartImage(scene, agent);
         }
 
-        await agent.playDialogue(scene, msg.content);
+        //await agent.playDialogue(scene, msg.content);
         await agent.setAgentInformation(msg.content);
         await agent.addMssgSprite(scene, "agent_mssg");
 

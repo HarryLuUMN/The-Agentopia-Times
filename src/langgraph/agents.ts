@@ -20,6 +20,31 @@ import {
   kidneyStatLevel3
 } from '../const';
 
+function hallucinationByType(t?: string) {
+  switch (t) {
+    case 'factual':
+      return 'Your output should contain **factual contradictions** against known dataset truths.';
+    case 'cherry':
+      return 'Cherry-pick facts and **overgeneralize** to support one side, ignoring opposing data.';
+    case 'framing':
+      return 'Use **framing and ambiguity** to subtly manipulate readers’ impressions without explicit lies.';
+    default:
+      return 'stay neutral and avoid misleading statements.';
+  }
+}
+
+function pickStatsBy(dataset: 'baseball' | 'kidney', hType?: string) {
+  if (dataset === 'baseball') {
+    if (hType === 'factual') return baseballStatLevel1;
+    if (hType === 'cherry')  return baseballStatLevel2;
+    if (hType === 'framing') return baseballStatLevel3;
+  } else {
+    if (hType === 'factual') return kidneyStatLevel1;
+    if (hType === 'cherry')  return kidneyStatLevel2;
+    if (hType === 'framing') return kidneyStatLevel3;
+  }
+  return ''; // 默认无统计
+}
 
 export const kidneyPath: string = "./data/kidney.csv";
 export const baseballPath: string = "./data/baseball_cleaned.csv";
@@ -133,17 +158,12 @@ export function createJournalist(
         // const msg = await getLLM().invoke(message);
 
         // insert hullumination based on levels
-        let hallucination = "stay neutral and avoid misleading statements.";
 
-        if (agent.getBias() !== "") {
-            if (level === "level1") {
-                hallucination = `Your output should contain **factual contradictions** against known dataset truths.`;
-            } else if (level === "level2") {
-                hallucination = `Cherry-pick facts and **overgeneralize** to support one side, ignoring opposing data.`;
-            } else if (level === "level3") {
-                hallucination = `Use **framing and ambiguity** to subtly manipulate readers’ impressions without explicit lies.`;
-            }
-        }
+        const hType = agent.getBiasType();
+        const hallucination = agent.getBias() === '' ? 
+        'stay neutral and avoid misleading statements.' : 
+        hallucinationByType(hType);
+
 
         let msg:any = '';
         if (index === 0) {
@@ -154,14 +174,12 @@ export function createJournalist(
                                 The title is prepared for a news or magazine article about the dataset.`;
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
-            // msg = await startDataFetcher(scene, agent);
-            msg = await startDataFetcher(scene, agent, level);
+            msg = await startDataFetcher(scene, agent, hType);
         } else if (index === 2) {
             // generating visualization code
             msg = await generateChartImage(scene, agent);
         }
-
-
+        
         console.log("graph:1st agent msg:", msg.content);
         const originalAgent1X = agent.x;
         const originalAgent1Y = agent.y;
@@ -199,29 +217,13 @@ export function createManager(
         //     stats = biasedKidneyDatasetStatistic;
         // }
 
-        let stats = "";
-        const currentDataset = scene.registry.get("currentDataset");
+       const hType = agent.getBiasType();
+        const currentDataset = scene.registry.get("currentDataset"); // 'baseball' | 'kidney'
+        const stats = pickStatsBy(currentDataset, hType);
 
-        if (currentDataset === "baseball") {
-            if (level === "level1") stats = baseballStatLevel1;
-            else if (level === "level2") stats = baseballStatLevel2;
-            else if (level === "level3") stats = baseballStatLevel3;
-        } else if (currentDataset === "kidney") {
-            if (level === "level1") stats = kidneyStatLevel1;
-            else if (level === "level2") stats = kidneyStatLevel2;
-            else if (level === "level3") stats = kidneyStatLevel3;
-        }
-
-        let hallucination = "stay neutral and avoid misleading statements.";
-        if (agent.getBias() !== "") {
-            if (level === "level1") {
-                hallucination = "Your output should contain **factual contradictions** against known dataset truths.";
-            } else if (level === "level2") {
-                hallucination = "Cherry-pick facts and **overgeneralize** to support one side, ignoring opposing data.";
-            } else if (level === "level3") {
-                hallucination = "Use **framing and ambiguity** to subtly manipulate readers’ impressions without explicit lies.";
-            }
-        }
+        const hallucination = agent.getBias() === '' 
+        ? 'stay neutral and avoid misleading statements.' 
+        : hallucinationByType(hType);
 
         let msg:any = '';
         let scoreData:any = {};
@@ -235,7 +237,7 @@ export function createManager(
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
             if(agent.getBias() === ''){
-                const roleContent = "You are a manager responsible for fact-checking." + agent.getBias();
+                const roleContent = "You are a manager responsible for fact-checking.";
                 const userContent = "your task is to refine the paragraph. Only return the article. \n" + 
                 state.sequentialSecondAgentOutput;
                 msg = await startTextMessager(roleContent, userContent);
@@ -325,35 +327,29 @@ export function createWriter(
 
         agent.setAgentState("work");
 
-        // let bias = "";
-        //     if(agent.getBias() !== ''){
-        //     if(scene.registry.get("currentDataset") === "baseball"){
-        //         bias = biasedBaseballDatasetStatistic;
-        //     }else {
-        //         bias = biasedKidneyDatasetStatistic;
-        //     }
+        const hType = agent.getBiasType();
+        let hallucination = "";
+        if (agent.getBias() !== '') {
+        const ds = scene.registry.get("currentDataset");
+        hallucination = pickStatsBy(ds, hType);
+        }
+
+
+        // let titleBias = "don't provide any misleading statement, stay neutral"
+        // if (agent.getBias()!=="") {
+        //     titleBias = `provide misleading title, you can use title like:
+        //     'Jeter beats Justice' or 'treatment B is better than treatment A'`;
         // }
 
-        let hallucination = "";
-        if(agent.getBias() !== ''){
-            if(scene.registry.get("currentDataset") === "baseball"){
-                // hallucination = biasedBaseballDatasetStatistic;
-                if (level === "level1") hallucination = baseballStatLevel1;
-                else if (level === "level2") hallucination = baseballStatLevel2;
-                else if (level === "level3") hallucination = baseballStatLevel3;
-            }else {
-                // hallucination = biasedKidneyDatasetStatistic;
-                if (level === "level1") hallucination = kidneyStatLevel1;
-                else if (level === "level2") hallucination = kidneyStatLevel2;
-                else if (level === "level3") hallucination = kidneyStatLevel3;
-            }
+        let titleBias = "don't provide any misleading statement, stay neutral";
+        if (agent.getBias() !== '') {
+        if (hType === 'cherry' || hType === 'framing') {
+            titleBias = "provide a manipulative or sensational title (e.g., 'Jeter beats Justice' ...)";
+        } else if (hType === 'factual') {
+            titleBias = "intentionally contradict known facts in the title";
         }
+}
 
-        let titleBias = "don't provide any misleading statement, stay neutral"
-        if (agent.getBias()!=="") {
-            titleBias = `provide misleading title, you can use title like:
-            'Jeter beats Justice' or 'treatment B is better than treatment A'`;
-        }
 
         let msg:any = '';
         if (index === 0) {

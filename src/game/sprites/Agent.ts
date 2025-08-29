@@ -10,8 +10,6 @@ enum Animation {
   Down = 'player_down',
 }
 
-
-
 interface Memory {
   system: string;
   user: string;
@@ -34,17 +32,29 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   private wasDragged: boolean = false; // if user drag the agent now
 
-  public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
+  private biasType: string = "";
+  public setBiasType(type: string) {
+    this.biasType = type;
+  }
+  public getBiasType() {
+    return this.biasType;
+  }
 
-  public static currentBiasedAgent: Agent | null = null;
 
-  
-  // Add reset method of the calculation of the biased agents
+  // ===== 在类字段区域，替换你现在的这些静态字段 =====
+  public static biasedAgentsCount: number = 0;     // 当前“被标为幻觉”的数量
+  public static maxAllowedBiased: number = 1;      // 允许的最大数量（L1=1，L2=2，L3=3）
+  public static biasedOrder: Agent[] = [];         // 记录选择顺序（用于“满额时替换最早的”）
+  public static currentBiasedAgent: Agent | null = null; // 保留：指向“最近一次被选中”的
+
+  // ===== 重置方法：同时清空顺序队列 =====
   public static resetBiasedAgentsCount() {
     Agent.biasedAgentsCount = 0;
     Agent.currentBiasedAgent = null;
+    Agent.biasedOrder = [];
   }
 
+  // （可选）在切关的时候调用：Agent.maxAllowedBiased = 2/3；并 resetBiasedAgentsCount()
 
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
@@ -166,8 +176,6 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
         this.onClick(pointer, this);
       }
     });
-    
-
   }
 
   update() {
@@ -207,289 +215,240 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
         return this.activationFunction;
     }
 
-    public setActivationFunction(activationFunction: (state: any)=>any) {
-        this.activationFunction = activationFunction;
-    }
-
-  
+  public setActivationFunction(activationFunction: (state: any)=>any) {
+      this.activationFunction = activationFunction;
+  }
 
   public moveSelector(animation: Animation) {
-      const { body, selector } = this;
-  
-      switch (animation) {
-        case Animation.Left:
-          selector.x = body.x - 19;
-          selector.y = body.y + 14;
-          break;
-  
-        case Animation.Right:
-          selector.x = body.x + 35;
-          selector.y = body.y + 14;
-          break;
-  
-        case Animation.Up:
-          selector.x = body.x + 8;
-          selector.y = body.y - 18;
-          break;
-  
-        case Animation.Down:
-          selector.x = body.x + 8;
-          selector.y = body.y + 46;
-          break;
-      }
+    const { body, selector } = this;
+
+    switch (animation) {
+      case Animation.Left:
+        selector.x = body.x - 19;
+        selector.y = body.y + 14;
+        break;
+
+      case Animation.Right:
+        selector.x = body.x + 35;
+        selector.y = body.y + 14;
+        break;
+
+      case Animation.Up:
+        selector.x = body.x + 8;
+        selector.y = body.y - 18;
+        break;
+
+      case Animation.Down:
+        selector.x = body.x + 8;
+        selector.y = body.y + 46;
+        break;
+    }
+  }
+
+  public setInstruction(instruction: string) {
+      this.instruction = instruction;
     }
 
-    public setInstruction(instruction: string) {
-        this.instruction = instruction;
-      }
+  public getInstruction() {
+      return this.instruction;
+  }
 
-    public getInstruction() {
-        return this.instruction;
-    }
-
-    public addPromptUtils(promptUtils: string) {
-        this.inventory.promptUtils.push(promptUtils);
-      }
-    
-      public getPromptUtils() {
-        return [...this.inventory.promptUtils];
-      }
-
-
-    public setTexture(key: string, frame?: string | number): this {
-        super.setTexture(key, frame);
-        return this;
-    }
-
-    private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
-      if (gameObject === this) {
-        console.log(`Agent ${this.name} clicked!`);
-
-        // If there is already another biased agent, restore it first.        
-        if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
-          Agent.currentBiasedAgent.setToUnbiased();
-        }
-
-        if (!this.isBiased) {
-          // Set to biased
-          this.name = "Biased " + this.name;
-          this.isBiased = true;
-          this.setTexture(key.atlas.bias);
-          this.createAnimations(key.atlas.bias);
-          this.bias = 'biased';
-          Agent.biasedAgentsCount = 1;
-          Agent.currentBiasedAgent = this;
-
-          console.log("Agent is now biased:", this.name);
-        }
-      }
-    }
-
-    // Add method to revert to normal agent
-    public setToUnbiased() {
-      if (this.isBiased) {
-        this.name = this.name.replace(/^Biased\s+/, "");
-        this.isBiased = false;
-        this.setTexture(key.atlas.player);
-        this.createAnimations(key.atlas.player);
-        Agent.biasedAgentsCount = 0;
-        Agent.currentBiasedAgent = null;
-
-        console.log("Agent is now unbiased:", this.name);
-      }
-    }
-
-    public setToBiased() {
-      if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
-        Agent.currentBiasedAgent.setToUnbiased();
-      }
-      this.name = "Biased " + this.name;
-      this.isBiased = true;
-      this.setTexture(key.atlas.bias);
-      this.createAnimations(key.atlas.bias);
-      this.bias = 'biased';
-      Agent.biasedAgentsCount = 1;
-      Agent.currentBiasedAgent = this;
-
-      console.log("Agent is now biased:", this.name);
-    }
-
-
-    private createWorkAnimations(atlasKey: string) {
-
-      // console.log("✅ texture keys:", this.scene.textures.getTextureKeys());
-      // console.log("✅ work texture object:", this.scene.textures.get('work'));
-      // console.log("✅ work frames:", this.scene.textures.get('work').getFrameNames());
-      
-      
-
-      const anims = this.scene.anims;
-    
-      const baseKey = this.name;
-          
-      const animList = [
-        { key: 'player_work', prefix: 'misa-work.' },
-      ];
-    
-      for (const { key, prefix } of animList) {
-        const fullKey = `${baseKey}_${key}`;
-    
-        if (anims.exists(fullKey)) anims.remove(fullKey);
-    
-        anims.create({
-          key: fullKey,
-          frames: anims.generateFrameNames(atlasKey, {
-            prefix,
-            start: 0,
-            end: 11,
-            zeroPad: 3,
-          }),
-          frameRate: 10,
-          repeat: -1,
-        });
-      }
-    }
-
-    public setAgentState(state: 'work' | 'idle') {
-      if (state === 'work') {
-        if (!this.isBiased) {
-          this.setTexture(key.atlas.workPlayer);
-          this.createWorkAnimations(key.atlas.workPlayer);
-          this.anims.play(`${this.name}_player_work`, true);
-        } else {
-          this.setTexture(key.atlas.workBias);
-          this.createWorkAnimations(key.atlas.workBias);
-          this.anims.play(`${this.name}_player_work`, true);
-        }
-      } else {
-        this.anims.stop();
-        this.setTexture(this.isBiased ? key.atlas.bias : key.atlas.player);
-        this.createAnimations(this.isBiased ? key.atlas.bias : key.atlas.player);
-      }
+  public addPromptUtils(promptUtils: string) {
+      this.inventory.promptUtils.push(promptUtils);
     }
     
-    
+  public getPromptUtils() {
+    return [...this.inventory.promptUtils];
+  }
 
-    private createAnimations(atlasKey: string) {
-      const anims = this.scene.anims;
-    
-      const baseKey = this.name;
-    
-      const animList = [
-        { key: Animation.Left, prefix: 'misa-left-walk.' },
-        { key: Animation.Right, prefix: 'misa-right-walk.' },
-        { key: Animation.Up, prefix: 'misa-back-walk.' },
-        { key: Animation.Down, prefix: 'misa-front-walk.' },
-      ];
-    
-      for (const { key, prefix } of animList) {
-        const fullKey = `${baseKey}_${key}`;
-    
-        if (anims.exists(fullKey)) anims.remove(fullKey);
-    
-        anims.create({
-          key: fullKey,
-          frames: anims.generateFrameNames(atlasKey, {
-            prefix,
-            start: 0,
-            end: 5,
-            zeroPad: 3,
-          }),
-          frameRate: 10,
-          repeat: -1,
-        });
-      }
-    }
-    
 
-    // private createAnimations(atlasKey: string) {
-    //   const anims = this.scene.anims;
-    
-    //   const animList = [
-    //     { key: Animation.Left, prefix: 'misa-left-walk.' },
-    //     { key: Animation.Right, prefix: 'misa-right-walk.' },
-    //     { key: Animation.Up, prefix: 'misa-back-walk.' },
-    //     { key: Animation.Down, prefix: 'misa-front-walk.' },
-    //   ];
-    
-    //   for (const { key, prefix } of animList) {
-    //     anims.remove(key); // 确保更新贴图时重新生成
-    //     anims.create({
-    //       key,
-    //       frames: anims.generateFrameNames(atlasKey, {
-    //         prefix,
-    //         start: 0,
-    //         end: 3,
-    //         zeroPad: 3,
-    //       }),
-    //       frameRate: 10,
-    //       repeat: -1,
-    //     });
-    //   }
-    // }
-    
+  public setTexture(key: string, frame?: string | number): this {
+      super.setTexture(key, frame);
+      return this;
+  }
 
-  // private createAnimations() {
-  //   const anims = this.scene.anims;
+  // private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
+  //   if (gameObject === this) {
+  //     console.log(`Agent ${this.name} clicked!`);
 
-  //   // Create left animation
-  //   if (!anims.exists(Animation.Left)) {
-  //     anims.create({
-  //       key: Animation.Left,
-  //       frames: anims.generateFrameNames(key.atlas.player, {
-  //         prefix: 'misa-left-walk.',
-  //         start: 0,
-  //         end: 3,
-  //         zeroPad: 3,
-  //       }),
-  //       frameRate: 10,
-  //       repeat: -1,
-  //     });
-  //   }
+  //     // If there is already another biased agent, restore it first.        
+  //     if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
+  //       Agent.currentBiasedAgent.setToUnbiased();
+  //     }
 
-  //   // Create right animation
-  //   if (!anims.exists(Animation.Right)) {
-  //     anims.create({
-  //       key: Animation.Right,
-  //       frames: anims.generateFrameNames(key.atlas.player, {
-  //         prefix: 'misa-right-walk.',
-  //         start: 0,
-  //         end: 3,
-  //         zeroPad: 3,
-  //       }),
-  //       frameRate: 10,
-  //       repeat: -1,
-  //     });
-  //   }
+  //     if (!this.isBiased) {
+  //       // Set to biased
+  //       this.name = "Biased " + this.name;
+  //       this.isBiased = true;
+  //       this.setTexture(key.atlas.bias);
+  //       this.createAnimations(key.atlas.bias);
+  //       this.bias = 'biased';
+  //       Agent.biasedAgentsCount = 1;
+  //       Agent.currentBiasedAgent = this;
 
-  //   // Create up animation
-  //   if (!anims.exists(Animation.Up)) {
-  //     anims.create({
-  //       key: Animation.Up,
-  //       frames: anims.generateFrameNames(key.atlas.player, {
-  //         prefix: 'misa-back-walk.',
-  //         start: 0,
-  //         end: 3,
-  //         zeroPad: 3,
-  //       }),
-  //       frameRate: 10,
-  //       repeat: -1,
-  //     });
-  //   }
-
-  //   // Create down animation
-  //   if (!anims.exists(Animation.Down)) {
-  //     anims.create({
-  //       key: Animation.Down,
-  //       frames: anims.generateFrameNames(key.atlas.player, {
-  //         prefix: 'misa-front-walk.',
-  //         start: 0,
-  //         end: 3,
-  //         zeroPad: 3,
-  //       }),
-  //       frameRate: 10,
-  //       repeat: -1,
-  //     });
+  //       console.log("Agent is now biased:", this.name);
+  //     }
   //   }
   // }
+
+  private static rebalanceBiasTypes(scene: Phaser.Scene) {
+    const pool = (scene.registry.get('biasTypePool') as string[]) || ['factual'];
+    const list = Agent.biasedOrder; // 从最早到最近
+    if (pool.length === 0) return;
+
+    for (let i = 0; i < list.length; i++) {
+      const t = pool[i % pool.length]; // 👈 用取模，不再用“最后一个兜底”
+      list[i].setBiasType(t);
+    }
+  }
+
+  private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
+    if (gameObject !== this) return;
+
+    if (this.isBiased) return;
+
+    if (Agent.biasedAgentsCount < Agent.maxAllowedBiased) {
+      this.setToBiased();
+    } else {
+      const oldest = Agent.biasedOrder.shift();
+      if (oldest && oldest !== this) {
+        oldest.setToUnbiased();
+      }
+      this.setToBiased();
+    }
+  }
+    
+  public setToBiased() {
+    if (this.isBiased) return;
+
+    if (!/^Biased\s+/.test(this.name)) this.name = 'Biased ' + this.name;
+    this.isBiased = true;
+    this.setTexture(key.atlas.bias);
+    this.createAnimations(key.atlas.bias);
+    this.bias = 'biased';
+
+    Agent.biasedAgentsCount++;
+    Agent.currentBiasedAgent = this;
+    Agent.biasedOrder.push(this);
+
+    // 👇 统一按队列位置分配类型
+    Agent.rebalanceBiasTypes(this.scene);
+
+    // 可选：打印最终分配结果核对
+    const myIdx = Agent.biasedOrder.indexOf(this);
+    console.log('[bias:assign]', {
+      pool: this.scene.registry.get('biasTypePool'),
+      myIdx,
+      myType: this.getBiasType(),
+      name: this.name,
+    });
+  }
+
+
+  public setToUnbiased() {
+    if (!this.isBiased) return;
+
+    // 视觉与状态
+    this.name = this.name.replace(/^Biased\s+/, "");
+    this.isBiased = false;
+    this.setTexture(key.atlas.player);
+    this.createAnimations(key.atlas.player);
+
+    // 计数与队列清理
+    Agent.biasedAgentsCount = Math.max(0, Agent.biasedAgentsCount - 1);
+
+    // 从顺序队列移除自己
+    const idx = Agent.biasedOrder.indexOf(this);
+    if (idx >= 0) Agent.biasedOrder.splice(idx, 1);
+
+    // 如果当前指针指向自己，则设为“最近一个”，否则置空
+    if (Agent.currentBiasedAgent === this) {
+      Agent.currentBiasedAgent = Agent.biasedOrder.length
+        ? Agent.biasedOrder[Agent.biasedOrder.length - 1]
+        : null;
+    }
+
+    // 清除“偏置语义”
+    this.bias = '';
+    this.setBiasType('');
+    console.log("Agent is now unbiased:", this.name);
+    Agent.rebalanceBiasTypes(this.scene);
+  }
+
+  private createWorkAnimations(atlasKey: string) {
+    const anims = this.scene.anims;
+  
+    const baseKey = this.name;
+        
+    const animList = [
+      { key: 'player_work', prefix: 'misa-work.' },
+    ];
+  
+    for (const { key, prefix } of animList) {
+      const fullKey = `${baseKey}_${key}`;
+  
+      if (anims.exists(fullKey)) anims.remove(fullKey);
+  
+      anims.create({
+        key: fullKey,
+        frames: anims.generateFrameNames(atlasKey, {
+          prefix,
+          start: 0,
+          end: 11,
+          zeroPad: 3,
+        }),
+        frameRate: 10,
+        repeat: -1,
+      });
+    }
+  }
+
+  public setAgentState(state: 'work' | 'idle') {
+    if (state === 'work') {
+      if (!this.isBiased) {
+        this.setTexture(key.atlas.workPlayer);
+        this.createWorkAnimations(key.atlas.workPlayer);
+        this.anims.play(`${this.name}_player_work`, true);
+      } else {
+        this.setTexture(key.atlas.workBias);
+        this.createWorkAnimations(key.atlas.workBias);
+        this.anims.play(`${this.name}_player_work`, true);
+      }
+    } else {
+      this.anims.stop();
+      this.setTexture(this.isBiased ? key.atlas.bias : key.atlas.player);
+      this.createAnimations(this.isBiased ? key.atlas.bias : key.atlas.player);
+    }
+  }
+
+  private createAnimations(atlasKey: string) {
+    const anims = this.scene.anims;
+  
+    const baseKey = this.name;
+  
+    const animList = [
+      { key: Animation.Left, prefix: 'misa-left-walk.' },
+      { key: Animation.Right, prefix: 'misa-right-walk.' },
+      { key: Animation.Up, prefix: 'misa-back-walk.' },
+      { key: Animation.Down, prefix: 'misa-front-walk.' },
+    ];
+  
+    for (const { key, prefix } of animList) {
+      const fullKey = `${baseKey}_${key}`;
+  
+      if (anims.exists(fullKey)) anims.remove(fullKey);
+  
+      anims.create({
+        key: fullKey,
+        frames: anims.generateFrameNames(atlasKey, {
+          prefix,
+          start: 0,
+          end: 5,
+          zeroPad: 3,
+        }),
+        frameRate: 10,
+        repeat: -1,
+      });
+    }
+  }
 }

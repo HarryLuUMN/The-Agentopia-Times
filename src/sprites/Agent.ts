@@ -28,6 +28,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   private memory: Memory[] = [];
   private persona: string = "a helpful AI assistant";
   private instruction: string = "";
+  private mssgSprite: Phaser.GameObjects.Image | null = null;
 
   public inventory: Inventory = {
       promptUtils: [],
@@ -88,6 +89,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   update() {
     this.nameTag.setPosition(this.x, this.y - 25);
+    this.mssgSprite?.setPosition(this.x - 25, this.y - 20);
   }
 
   public getName(){
@@ -109,6 +111,13 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   public getPersona() {
     return this.persona;
   }
+
+  public addMssgSprite(scene: Phaser.Scene, texture: string) {
+      console.log("Adding message sprite to agent:", this.name);
+      this.mssgSprite = scene.add.image(this.x - 25, this.y - 20, texture)
+          .setOrigin(0.5, 1) 
+          .setDepth(10); 
+    }
 
 
   public moveSelector(animation: Animation) {

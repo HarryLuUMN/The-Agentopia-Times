@@ -82,6 +82,7 @@ export function createAgent(
                             The title is prepared for a news or magazine article about the dataset.`;
 
         agent.setAgentState('work');
+        agent.addMssgSprite(scene, "agent_mssg");
 
         if (index === 0) {
             mssg = await startTextMessager(roleContent, userContent);
@@ -126,6 +127,9 @@ export function createAgent(
         // await updateStateIcons(zones, "mail");
 
         console.log('graph:single agent msg', mssg.content);
+
+        //await agent.playDialogue(scene, mssg.content);
+        await agent.setAgentInformation(mssg.content);
 
         await autoControlAgent(
             scene,

@@ -279,7 +279,7 @@ export class Level2 extends ParentScene {
 
 
     // DifficultySelector
-    // createDifficultySelector(this);
+    createDifficultySelector(this);
 
     addPDFIcon(this);
 

@@ -267,7 +267,7 @@ export class Level1 extends ParentScene {
 
 
     // DifficultySelector
-    // createDifficultySelector(this);
+    createDifficultySelector(this);
 
     // The PDF icon to open the instruction PDF
     addPDFIcon(this);

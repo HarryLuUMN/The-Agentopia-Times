@@ -304,7 +304,7 @@ export class Level3 extends ParentScene {
 
 
     // DifficultySelector
-    // createDifficultySelector(this);
+    createDifficultySelector(this);
 
     // PDF icon
     addPDFIcon(this);

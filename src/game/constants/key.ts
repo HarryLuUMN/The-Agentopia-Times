@@ -12,6 +12,9 @@ const image = {
   coin: 'coin',
   bird: 'bird',
   coinIcon: 'coinIcon',
+  dialog_icon: 'dialog_icon',
+  idle_icon: 'idle_icon',
+  record_icon: 'record_icon',
   baseball: 'baseball',
   kidney: 'kidney',
   restart: 'restart',
@@ -29,6 +32,8 @@ const image = {
   voting: "voting",
   single_agent: "single_agent",
   pdfIcon: 'pdfIcon',
+  agent_mssg: 'agent_mssg',
+  agent_idle: 'agent_idle',
 } as const;
 
 const scene = {

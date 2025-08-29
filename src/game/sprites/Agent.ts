@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 import { key } from '../constants';
 import { Inventory } from './Player';
+import { EventBus } from '../EventBus';
 
 enum Animation {
   Left = 'player_left',
@@ -31,6 +32,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   private instruction: string = "";
   private bias: string = "";
   private isBiased: boolean = false;
+  private mssgSprite: Phaser.GameObjects.Image | null = null;
 
   private wasDragged: boolean = false; // if user drag the agent now
 
@@ -40,12 +42,128 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   public static currentBiasedAgent: Agent | null = null;
 
+
+  private agentInformation:string = "aaaaaaa";
+
+  public addMssgSprite(scene: Phaser.Scene, texture: string, frame?: string | number) {
+  if (this.mssgSprite) {
+    console.log("Updating message sprite for agent:", this.name);
+    this.mssgSprite.setTexture(texture, frame);
+
+    this.mssgSprite.removeAllListeners();
+    this.mssgSprite.disableInteractive();
+
+    if (texture === "agent_mssg") {
+      this.mssgSprite.setInteractive({ useHandCursor: true });
+      this.mssgSprite.on('pointerdown', () => {
+        console.log(`Message sprite of ${this.name} clicked!`);
+        this.changeNameTagColor('#00ff00');
+        EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+      });
+    }
+    return;
+  }
+
+  console.log("Adding message sprite to agent:", this.name);
+  this.mssgSprite = scene.add.image(this.x, this.y, texture, frame)
+    .setOrigin(0.5, 1)
+    .setDepth(10);
+
+  if (texture === "agent_mssg") {
+    this.mssgSprite.setInteractive({ useHandCursor: true });
+    this.mssgSprite.on('pointerdown', () => {
+      console.log(`Message sprite of ${this.name} clicked!`);
+      this.changeNameTagColor('#00ff00');
+      EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+    });
+  }
+}
+
+
+
   
   // Add reset method of the calculation of the biased agents
   public static resetBiasedAgentsCount() {
     Agent.biasedAgentsCount = 0;
     Agent.currentBiasedAgent = null;
   }
+
+  public getAgentInformation(){
+    return this.agentInformation;
+  }
+
+  public setAgentInformation(info: string) {
+    this.agentInformation = info;
+    EventBus.emit("agent-information", {
+      agent: this.name,
+      mssg: this.getAgentInformation()
+    });
+  }
+
+public playDialogue(
+  scene: Phaser.Scene,
+  text: string,
+  speed: number = 50,
+  sentencePause: number = 1500
+) {
+  // 1. 按标点切分成句子数组（支持中英文）
+  const sentences = text.match(/[^.!?。！？]+[.!?。！？]/g) || [text];
+
+  // 2. 在 Agent 右上角添加文本
+  let textObj = scene.add.text(this.x + 40, this.y - 40, "", {
+    fontSize: "16px",
+    color: "#ffffff",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    wordWrap: { width: 200 }
+  }).setDepth(20);
+
+  let currentSentenceIndex = 0;
+  let charIndex = 0;
+  let isPaused = false;
+
+  scene.time.addEvent({
+    delay: speed,
+    loop: true,
+    callback: () => {
+      if (isPaused) return;
+
+      const sentence = sentences[currentSentenceIndex];
+
+      if (charIndex < sentence.length) {
+        // 逐字输出
+        textObj.text += sentence[charIndex];
+        charIndex++;
+      } else {
+        // 一句话播完 → 停顿 → 清空 → 下一句
+        isPaused = true;
+        scene.time.delayedCall(sentencePause, () => {
+          currentSentenceIndex++;
+          charIndex = 0;
+
+          if (currentSentenceIndex < sentences.length) {
+            textObj.text = "";   // ✅ 清空上句
+            isPaused = false;    // 开始下一句
+          } else {
+            console.log(`✅ Agent ${this.name} 所有句子播放完毕`);
+            textObj.destroy();   // 最后一条播完移除
+          }
+        });
+      }
+    }
+  });
+
+  // 让气泡位置始终跟随 Agent
+  scene.events.on("update", () => {
+    if (textObj && textObj.active) {
+      textObj.setPosition(this.x + 40, this.y - 40);
+    }
+  });
+}
+
 
 
   public assignToWorkplace: boolean = false;
@@ -139,8 +257,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   }
 
-  update() {
-    // this.nameTag.setPosition(this.x, this.y - 25);
+update() {
+    this.mssgSprite?.setPosition(this.x - 15, this.y);
   }
 
   public getName(){
@@ -234,6 +352,9 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
       if (gameObject === this) {
         console.log(`Agent ${this.name} clicked!`);
 
+        const agentInfo = this.getAgentInformation();
+        console.log(`Agent Information: ${agentInfo}`);
+
         // If there is already another biased agent, restore it first.        
         if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
           Agent.currentBiasedAgent.setToUnbiased();
@@ -282,6 +403,8 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
       console.log("Agent is now biased:", this.name);
     }
+
+
 
 
     private createWorkAnimations(atlasKey: string) {

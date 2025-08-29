@@ -13,6 +13,13 @@ export interface Report{
     department: string,
 }
 
+export interface AgentInformation{
+    mssg: string,
+    agent: string,
+}
+
+
+
 function App()
 {
     const [report, setReport] = useState<Report[]>([]);
@@ -20,6 +27,7 @@ function App()
     const [currentReport, setCurrentReport] = useState("");
     const [htmlReport, setHtmlReport] = useState<any>("");
     const [isConstitutionOpen, setIsConstitutionOpen] = useState(false);
+    const [agentProfiles, setAgentProfiles] = useState<AgentInformation[]>([]);
 
 
     const [charts, setCharts] = useState<{id: string; code: string}[]>([]);
@@ -46,6 +54,25 @@ function App()
             
             // setIsOpen(true);
         };
+
+        const handleAgentInformation = (data: {agent: string, mssg: string}) =>{
+          console.log("Agent information received", data.agent, data.mssg);
+          const curReport:AgentInformation = {
+                mssg: data.mssg,
+                agent: data.agent,
+            }
+            // check if the report'department is already in the list, if yes, update the report; if no, add the report
+            const index = agentProfiles.findIndex((r) => r.agent === data.agent);
+            if(index !== -1){
+                agentProfiles[index] = curReport;
+                setAgentProfiles([...agentProfiles]);
+            }else{
+                agentProfiles.push(curReport);
+                setAgentProfiles([...agentProfiles]);
+            }
+
+            console.log("agentProfiles", agentProfiles);
+        }
 
         // have a handler for setting currentReport and open the reporting window
         const handleReportOpen = (data: { department: string}) => {
@@ -100,6 +127,45 @@ function App()
             // embedding the markdown into the draggable window
         }
 
+
+        const handleAgentInformationOpen = (data: { agent: string}) => {
+  const index = agentProfiles.findIndex((r) => r.agent === data.agent);
+  if(index !== -1){
+      setCurrentReport(agentProfiles[index].mssg);
+
+      marked.use({
+        extensions: [
+          {
+            name: 'highlight',
+            level: 'inline',
+            start(src) { return src.indexOf("=="); },
+            tokenizer(src, tokens) {
+              const rule = /^==([^=]+)==/;
+              const match = rule.exec(src);
+              if (match) {
+                return {
+                  type: 'highlight',
+                  raw: match[0],
+                  text: match[1],
+                  tokens: this.lexer.inlineTokens(match[1]),
+                };
+              }
+            },
+            renderer(token: any) {
+              return `<mark>${marked.parser(token.tokens)}</mark>`;
+            },
+          },
+        ],
+      });
+
+      console.log("agentProfiles[index].mssg", agentProfiles[index].mssg);
+
+      setHtmlReport(agentProfiles[index].mssg);
+      if(!isOpen)setIsOpen(true);
+  }
+}
+
+
         // EventBus.on("d3-code", (data: {d3Code: string, id: string}) => {
         //   setCharts(prev => [
         //     ...prev,
@@ -125,6 +191,10 @@ function App()
 
         EventBus.on("final-report", handleReportReceiving);
         EventBus.on("open-report", handleReportOpen);
+
+        EventBus.on("agent-information", handleAgentInformation);
+        EventBus.on("open-agent-information", handleAgentInformationOpen);
+
         EventBus.on("d3-code", handleD3Code);
         EventBus.on("open-constitution", handleConstitutionOpen);
 

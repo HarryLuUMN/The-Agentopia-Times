@@ -442,15 +442,15 @@ export async function startHTMLConstructor(
 
 `;
 
-    let reportMessage = `${style}${body}`;
+  let reportMessage = `${style}${body}`;
 
-    console.log("graph:vis-report msg: ", reportMessage);
+  console.log("graph:vis-report msg: ", reportMessage);
 
-    EventBus.emit('final-report', {
-        report: reportMessage,
-        department: department+"-"+index,
-        title: "Final Report"
-    });
+  EventBus.emit('final-report', {
+      report: reportMessage,
+      department: department+"-"+index,
+      title: "Final Report"
+  });
 }
 
 export function startScoreComputer(judgeData: {

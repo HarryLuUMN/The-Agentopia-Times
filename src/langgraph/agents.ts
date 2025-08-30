@@ -119,9 +119,14 @@ export async function createReport(
     index: number,
     x: number, 
     y: number,
+    opts?: { isFinal?: boolean; textureKey?: string }
 ) {
     const reportBtn = scene.add.image(x, y, "report")
         .setDepth(1002).setInteractive();
+
+    if (opts?.isFinal) {
+        reportBtn.setTexture("final_report").setScale(0.2);
+    }
 
     reportBtn.on("pointerdown", () => {
         EventBus.emit("open-report", { department: zoneName+"-"+index });
@@ -308,11 +313,26 @@ export function createManager(
         await agent.setAgentInformation(msg.content);
         await agent.addMssgSprite(scene, "agent_mssg");
 
-        await createReport(scene, "chaining", index, destination.x, destination.y);
-        const report = await createReport(scene, "chaining", index, destination.x, destination.y);
-        await console.log("report in agent", report);
+        // await createReport(scene, "chaining", index, destination.x, destination.y);
+        // const report = await createReport(scene, "chaining", index, destination.x, destination.y);
+        // await console.log("report in agent", report);
         // await autoControlAgent(scene, report, tilemap, 530, 265, "Send Report to Next Department");
+        // await transmitReport(scene, report, nextRoomDestination.x, nextRoomDestination.y);
+        const finalRoom = index === (scene.registry.get('workflowConfig')?.length ?? 1) - 1;
+        
+        await createReport(scene, "chaining", index, destination.x, destination.y);
+
+        const report = await createReport(
+        scene,
+        "chaining",
+        index,
+        destination.x,
+        destination.y,
+        { isFinal: finalRoom }
+        );
+
         await transmitReport(scene, report, nextRoomDestination.x, nextRoomDestination.y);
+
 
         if(index === 2)return { sequentialOutput: msg.content, scoreData: scoreData };
         return { sequentialOutput: msg.content };
@@ -427,7 +447,7 @@ export function createWriter(
         // \n\n${msg.content}
         // `;
     
-        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index, title: "Intermediate Report1"});
+        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index, title: "Intermediate Report"});
         // send the final report to final location
         const originalAgent2X = agent.x;
         const originalAgent2Y = agent.y;

@@ -232,12 +232,15 @@ export function createAggregator(
         );
         console.log('[Debug] Decision sent to final location.');
 
+        const finalRoom = index === (scene.registry.get('workflowConfig')?.length ?? 1) - 1;
+
         const report = await createReport(
-            scene,
-            'voting',
-            index,
-            destination.x,
-            destination.y,
+        scene,
+        'voting',
+        index,
+        destination.x,
+        destination.y,
+        { isFinal: finalRoom }
         );
         await createReport(scene, 'voting', index, destination.x, destination.y);
 
@@ -264,7 +267,7 @@ export function createAggregator(
             EventBus.emit('final-report', {
                 report: decision.content,
                 department: 'voting'+"-"+index,
-                title: "Intermediate Report2"
+                title: "Intermediate Report"
             });
         }
         console.log('[Debug] Final report emitted.');

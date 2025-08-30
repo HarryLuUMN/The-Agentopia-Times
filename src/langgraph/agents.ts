@@ -427,7 +427,7 @@ export function createWriter(
         // \n\n${msg.content}
         // `;
     
-        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index });
+        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index, title: "Intermediate Report1"});
         // send the final report to final location
         const originalAgent2X = agent.x;
         const originalAgent2Y = agent.y;

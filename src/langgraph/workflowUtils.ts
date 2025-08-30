@@ -449,6 +449,7 @@ export async function startHTMLConstructor(
     EventBus.emit('final-report', {
         report: reportMessage,
         department: department+"-"+index,
+        title: "Final Report"
     });
 }
 

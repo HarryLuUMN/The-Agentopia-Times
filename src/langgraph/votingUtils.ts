@@ -264,6 +264,7 @@ export function createAggregator(
             EventBus.emit('final-report', {
                 report: decision.content,
                 department: 'voting'+"-"+index,
+                title: "Intermediate Report2"
             });
         }
         console.log('[Debug] Final report emitted.');

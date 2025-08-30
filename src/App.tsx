@@ -11,6 +11,7 @@ import ConstitutionPanel from './components/ConstitutionPanel';
 export interface Report{
     report: string,
     department: string,
+    title?: string;
 }
 
 export interface AgentInformation{
@@ -28,32 +29,34 @@ function App()
     const [htmlReport, setHtmlReport] = useState<any>("");
     const [isConstitutionOpen, setIsConstitutionOpen] = useState(false);
     const [agentProfiles, setAgentProfiles] = useState<AgentInformation[]>([]);
+    const [windowTitle, setWindowTitle] = useState<string>("Report");
+
 
 
     const [charts, setCharts] = useState<{id: string; code: string}[]>([]);
 
 
     useEffect(() => {
-        const handleReportReceiving = (data: { report: string, department: string }) => {
-            console.log("report received", data.department, data);
-            const curReport:Report = {
-                report: data.report,
-                department: data.department,
-            }
-            // check if the report'department is already in the list, if yes, update the report; if no, add the report
-            const index = report.findIndex((r) => r.department === data.department);
-            if(index !== -1){
-                report[index] = curReport;
-                setReport([...report]);
-            }else{
-                report.push(curReport);
-                setReport([...report]);
-            }
-
-            console.log("reports", report);
-            
-            // setIsOpen(true);
+      const handleReportReceiving = (data: { report: string; department: string; title?: string }) => {
+        console.log("report received", data.department, data);
+        const curReport: Report = {
+            report: data.report,
+            department: data.department,
+            title: data.title || "Report"
         };
+
+        const index = report.findIndex((r) => r.department === data.department);
+        if (index !== -1) {
+            report[index] = curReport;
+            setReport([...report]);
+        } else {
+            report.push(curReport);
+            setReport([...report]);
+        }
+
+        console.log("reports", report);
+      };
+
 
         const handleAgentInformation = (data: {agent: string, mssg: string}) =>{
           console.log("Agent information received", data.agent, data.mssg);
@@ -75,60 +78,50 @@ function App()
         }
 
         // have a handler for setting currentReport and open the reporting window
-        const handleReportOpen = (data: { department: string}) => {
-            const index = report.findIndex((r) => r.department === data.department);
-            if(index !== -1){
-                setCurrentReport(report[index].report);
+          const handleReportOpen = (data: { department: string; title?: string }) => {
+    const index = report.findIndex((r) => r.department === data.department);
+    if (index !== -1) {
+        setCurrentReport(report[index].report);
 
-                marked.use({
-                    extensions: [
-                      {
-                        name: 'highlight',
-                        level: 'inline',
-                        start(src) {
-                          return src.indexOf("=="); 
-                        },
-                        tokenizer(src, tokens) {
-                          const rule = /^==([^=]+)==/;
-                          const match = rule.exec(src);
-                          if (match) {
+        setWindowTitle(report[index].title || data.title || "Report");
+
+        marked.use({
+            extensions: [
+                {
+                    name: 'highlight',
+                    level: 'inline',
+                    start(src) {
+                        return src.indexOf("==");
+                    },
+                    tokenizer(src) {
+                        const rule = /^==([^=]+)==/;
+                        const match = rule.exec(src);
+                        if (match) {
                             return {
-                              type: 'highlight',
-                              raw: match[0],
-                              text: match[1],
-                              tokens: this.lexer.inlineTokens(match[1]),
+                                type: 'highlight',
+                                raw: match[0],
+                                text: match[1],
+                                tokens: this.lexer.inlineTokens(match[1]),
                             };
-                          }
-                        },
-                        renderer(token: any) {
-                          return `<mark>${marked.parser(token.tokens)}</mark>`;
-                        },
-                      },
-                    ],
-                  });
-                  
+                        }
+                    },
+                    renderer(token: any) {
+                        return `<mark>${marked.parser(token.tokens)}</mark>`;
+                    },
+                },
+            ],
+        });
 
-                // report[index].report += "<mark>TEST 111</mark>";
+        setHtmlReport(report[index].report);
 
-                console.log("report[index].report", report[index].report);
-            
-
-                // const compiledHTML = marked(report[index].report);
-                // const compiledHTML = marked.parse(report[index].report);
-
-                setHtmlReport(report[index].report);
-
-                //setHtmlReport(compiledHTML);
-
-                if(!isOpen)setIsOpen(true);
-
-                // testD3Compiling(TEST_D3_SCRIPT);
-            }
-            // embedding the markdown into the draggable window
-        }
+        if (!isOpen) setIsOpen(true);
+    }
+};
 
 
-        const handleAgentInformationOpen = (data: { agent: string}) => {
+
+
+  const handleAgentInformationOpen = (data: { agent: string}) => {
   const index = agentProfiles.findIndex((r) => r.agent === data.agent);
   if(index !== -1){
       setCurrentReport(agentProfiles[index].mssg);
@@ -222,7 +215,7 @@ function App()
             <PhaserGame />
             {isOpen && 
                 <DraggableWindow 
-                    title="Final Report" 
+                    title={windowTitle} 
                     context={htmlReport} 
                     onClose={() => {setIsOpen(false)}} 
                     charts={charts}

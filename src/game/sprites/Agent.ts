@@ -36,12 +36,56 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
 
   public isDrag: boolean = false; // track drag state
 
+
   // public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
 
   public static biasedAgentsCount: number = 0;     // Current number of "labeled hallucinations"
   public static maxAllowedBiased: number = 1;      // Maximum quantity allowed (L1=1, L2=2, L3=3)
   public static biasedOrder: Agent[] = [];         // Record order of selection
   public static currentBiasedAgent: Agent | null = null; // Reservation: pointing to the "last selected"
+
+
+  private agentInformation:string = "aaaaaaa";
+
+  public addMssgSprite(scene: Phaser.Scene, texture: string, frame?: string | number) {
+  if (this.mssgSprite) {
+    console.log("Updating message sprite for agent:", this.name);
+    this.mssgSprite.setTexture(texture, frame);
+
+    this.mssgSprite.removeAllListeners();
+    this.mssgSprite.disableInteractive();
+
+    if (texture === "agent_mssg") {
+      this.mssgSprite.setInteractive({ useHandCursor: true });
+      this.mssgSprite.on('pointerdown', () => {
+        console.log(`Message sprite of ${this.name} clicked!`);
+        this.changeNameTagColor('#00ff00');
+        EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+      });
+    }
+    return;
+  }
+
+  console.log("Adding message sprite to agent:", this.name);
+  this.mssgSprite = scene.add.image(this.x, this.y, texture, frame)
+    .setOrigin(0.5, 1)
+    .setDepth(10);
+
+  if (texture === "agent_mssg") {
+    this.mssgSprite.setInteractive({ useHandCursor: true });
+    this.mssgSprite.on('pointerdown', () => {
+      console.log(`Message sprite of ${this.name} clicked!`);
+      this.changeNameTagColor('#00ff00');
+      EventBus.emit("open-agent-information", {
+          agent: this.name
+        });
+    });
+  }
+}
+  public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
+
 
 
   private agentInformation:string = "aaaaaaa";
@@ -114,6 +158,20 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+
+  public getAgentInformation(){
+    return this.agentInformation;
+  }
+
+  public setAgentInformation(info: string) {
+    this.agentInformation = info;
+    EventBus.emit("agent-information", {
+      agent: this.name,
+      mssg: this.getAgentInformation()
+    });
+  }
+
+
 public playDialogue(
   scene: Phaser.Scene,
   text: string,
@@ -166,13 +224,14 @@ public playDialogue(
     }
   });
 
-  // Make the bubble position always follow Agent
+
   scene.events.on("update", () => {
     if (textObj && textObj.active) {
       textObj.setPosition(this.x + 40, this.y - 40);
     }
   });
 }
+
 
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
@@ -399,6 +458,30 @@ update() {
         if (oldest && oldest !== this) oldest.setToUnbiased();
         this.setToBiased();
       }
+      if (gameObject === this) {
+        console.log(`Agent ${this.name} clicked!`);
+
+        const agentInfo = this.getAgentInformation();
+        console.log(`Agent Information: ${agentInfo}`);
+
+        // If there is already another biased agent, restore it first.        
+        if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
+          Agent.currentBiasedAgent.setToUnbiased();
+        }
+
+        if (!this.isBiased) {
+          // Set to biased
+          this.name = "Biased " + this.name;
+          this.isBiased = true;
+          this.setTexture(key.atlas.bias);
+          this.createAnimations(key.atlas.bias);
+          this.bias = 'biased';
+          // Agent.biasedAgentsCount = 1;
+          // Agent.currentBiasedAgent = this;
+
+          console.log("Agent is now biased:", this.name);
+        }
+      }
     }
 
     // Add method to revert to normal agent
@@ -451,8 +534,6 @@ update() {
         name: this.name,
       });
     }
-
-
 
 
   private createWorkAnimations(atlasKey: string) {

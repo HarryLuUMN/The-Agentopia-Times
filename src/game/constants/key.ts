@@ -26,6 +26,7 @@ const image = {
   idle: 'idle',
   work: 'work',
   report: 'report',
+  final_report: 'final_report',
   hiring: "hiring",
   start: "start",
   sequential: "sequential",

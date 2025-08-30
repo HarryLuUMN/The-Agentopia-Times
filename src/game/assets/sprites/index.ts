@@ -20,4 +20,7 @@ export { default as idle_icon } from "./idle_char_icon.png"
 export { default as record_icon } from "./record_char_icon.png"
 export { default as pdf } from "./pdf.png"
 export { default as agent_mssg } from "./agent-mssg.png"
+
 export { default as agent_idle } from "./agent-idle.png"
+export { default as final_report } from "./final_report.png"
+

@@ -120,17 +120,23 @@ export async function parallelVotingExecutor(
         );
 
         // Wait for LLM result & return actions to complete.
-        const [decision] = await Promise.all([msg, returnPromise]);
-        console.log('graph:voting agent msg:', decision.content);
-        console.log(
-            `[Debug] Agent ${agent.getName()} has completed voting and returned to seat.`,
-        );
+        // const [decision] = await Promise.all([msg, returnPromise]);
+
+        const [llmResult] = await Promise.all([msg, returnPromise]);
+        console.log('graph:voting agent msg:', llmResult?.content);
 
         // 3. Return of voting results
-        console.log(
-            `[Debug] Agent ${agent.getName()} vote result: ${decision.content}`,
-        );
-        return `${agent.getName()}: ${decision.content}`;
+        console.log(`[Debug] Agent ${agent.getName()} vote result: ${llmResult?.content}`);
+
+        // Returns structured objects for use by aggregators only in visual polls
+        if (index === 2) {
+        const chartId = llmResult?.chartId ?? 'test-chart';
+        const d3Code  = llmResult?.d3Code  ?? llmResult?.content;
+        return { chartId, d3Code, agent: agent.getName(), type: 'viz' };
+        }
+
+        // The other phases keep the original strings and don't affect other strategies
+        return `${agent.getName()}: ${llmResult?.content}`;
     });
 
     // Wait for all agents to complete the process
@@ -177,23 +183,25 @@ export function createAggregator(
         `); // prompt_change
         } else if (index === 2) {
             console.log('graph:voting-votes: ', votes);
-            let llmInput = votes.map((v: any) => v.d3Code).join('; ');
-            let id = votes[0].chartId;
-            console.log('graph:voting-llmInput: ', id, llmInput);
+
+            const vizVotes = votes.filter((v: any) => v && typeof v === 'object' && (v.d3Code || v.vegaLite));
+            const llmInput = vizVotes.map((v: any) => v.d3Code || v.vegaLite).join('\n---\n');
+            const id = vizVotes[0]?.chartId || 'test-chart';
+
+            console.log('graph:voting-llmInput: ', id, llmInput?.slice(0, 300));
+
             decision = await llm.invoke(`
-            You are a visualization expert.
-            You are given multiple versions of Vega-Lite specifications, each representing a user's attempt to visualize the same dataset.
-            Your task is to aggregate these versions into a single improved Vega-Lite specification that combines the strengths of all provided inputs. Preserve data encodings and mark types that are effective. Resolve conflicts by choosing the clearest or most informative design. Remove redundancy.
-            Only output the final Vega-Lite JSON. Do not include any explanations, commentary, or quotation marks.
-            Input specifications:
-            ${llmInput}
+                You are a visualization expert.
+                You are given multiple versions of Vega-Lite specifications, each representing a user's attempt to visualize the same dataset.
+                Aggregate them into a single improved Vega-Lite JSON. Preserve effective encodings and marks. Remove redundancy.
+                Output ONLY the final Vega-Lite JSON (no quotes, no comments).
+                Inputs:
+                ${llmInput}
             `);
-            let chartData = { d3Code: decision.content, chartId: id };
-            EventBus.emit('d3-code', chartData);
-            let judgeData = await startJudges(
-                decision.content,
-                state.votingInput,
-            );
+
+            EventBus.emit('d3-code', { d3Code: decision.content, id });
+
+            const judgeData = await startJudges(decision.content, state.votingInput);
             await startHTMLConstructor(
                 judgeData.comments,
                 judgeData.writingComments,
@@ -202,7 +210,6 @@ export function createAggregator(
                 'voting',
                 index
             );
-            
             scoreData = startScoreComputer(judgeData);
 
             console.log('scoreData inside', scoreData);
@@ -225,12 +232,15 @@ export function createAggregator(
         );
         console.log('[Debug] Decision sent to final location.');
 
+        const finalRoom = index === (scene.registry.get('workflowConfig')?.length ?? 1) - 1;
+
         const report = await createReport(
-            scene,
-            'voting',
-            index,
-            destination.x,
-            destination.y,
+        scene,
+        'voting',
+        index,
+        destination.x,
+        destination.y,
+        { isFinal: finalRoom }
         );
         await createReport(scene, 'voting', index, destination.x, destination.y);
 
@@ -257,6 +267,7 @@ export function createAggregator(
             EventBus.emit('final-report', {
                 report: decision.content,
                 department: 'voting'+"-"+index,
+                title: "Intermediate Report"
             });
         }
         console.log('[Debug] Final report emitted.');
@@ -301,7 +312,10 @@ export function constructVotingGraph(
             level
         );
         console.log('[Debug] Voting phase completed.');
-        return { ...state, votingVotes: votes };
+
+            const context = returnDatasetDescription(scene);
+            return { ...state, votingVotes: votes, votingInput: context };
+        // return { ...state, votingVotes: votes };
     });
 
     votingGraph.addNode('aggregator', async (state: any) => {

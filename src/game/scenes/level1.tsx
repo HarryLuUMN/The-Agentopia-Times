@@ -192,16 +192,21 @@ export class Level1 extends ParentScene {
   }
 
   create() {
-      Agent.resetBiasedAgentsCount(); // reset the count of biased agents
 
-      // Randomly select an agent to be biased
-      this.time.delayedCall(100, () => { // Delay to make sure the agent has been generated
-        const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
-        if (agentsArray.length > 0) {
-          const randomAgent = Phaser.Utils.Array.GetRandom(agentsArray);
-          randomAgent.setToBiased();
-        }
-      });
+    this.registry.set('biasTypePool', ['factual']); // Level1
+
+    Agent.resetBiasedAgentsCount(); // reset the count of biased agents
+    Agent.maxAllowedBiased = 1;
+      
+    // Randomly select an agent to be biased
+    this.time.delayedCall(100, () => {
+      const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
+      if (agentsArray.length > 0) {
+        Phaser.Utils.Array.Shuffle(agentsArray);
+        const chosenAgents = agentsArray.slice(0, 1);
+        chosenAgents.forEach(agent => agent.setToBiased());
+      }
+    });
 
       this.registry.set('isWorkflowRunning', false);
       this.registry.set('currentPattern', "");
@@ -249,8 +254,8 @@ export class Level1 extends ParentScene {
     // add title bar + info icon with tooltip
     const LEVEL_TITLE = 'Level 1: Factual Contradiction';
     const LEVEL_INFO =
-      'Factual Contradiction\n' +
-      'This type of hallucination introduces statements that are directly opposite to the truth, such as reversing numbers, times, or causes.\n' +
+      'Factual Contradiction\n\n' +
+      'This type of hallucination introduces statements that are directly opposite to the truth, such as reversing numbers, times, or causes.\n\n' +
       'The goal is to recognize and correct conclusions that conflict with facts or common sense.'
     ;
 
@@ -1036,7 +1041,7 @@ return result;
         // 2) 用 Phaser 事件把分数带出去（监听里按分数决定是否创建 Next 按钮）
         this.events.emit('level-complete', { score: finalScore });
 
-        // 3) 如果你还需要全局总线，也把分数带上（可供其它场景/模块响应）
+        // 3) 全局总线，也把分数带上（可供其它场景/模块响应）
         eventTargetBus.dispatchEvent(
           new CustomEvent('signal', {
             detail: { type: 'level-complete', level: 'level1', score: finalScore }
@@ -1045,7 +1050,6 @@ return result;
     
         // save the scores to history
         saveHistory("level1", scoreData.overall_score);
-
       });
     } 
 
@@ -1242,10 +1246,10 @@ return result;
   }
 
   private showTryAgainMessage(score: number) {
-  const x = this.cameras.main.width - 52;
-  const y = this.cameras.main.height - 150;
+    const x = this.cameras.main.width - 52;
+    const y = this.cameras.main.height - 150;
 
-  const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
+    const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
     {
       fontSize: '16px',
       fontFamily: 'Verdana',
@@ -1261,8 +1265,8 @@ return result;
     .setDepth(2000)
     .setAlpha(0);
 
-  this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
-}
+    this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
+  }
 
 
   private createNextLevelButton() {

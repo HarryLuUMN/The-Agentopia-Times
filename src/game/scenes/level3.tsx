@@ -28,7 +28,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict} from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo} from './levelHelper';
 
 const level = "level3"
 
@@ -224,29 +224,35 @@ export class Level3 extends ParentScene {
   }
 
   create() {
-      Agent.resetBiasedAgentsCount(); // reset the count of biased agents
 
-      this.time.delayedCall(100, () => {
-        const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
-        if (agentsArray.length > 0) {
-          const randomAgent = Phaser.Utils.Array.GetRandom(agentsArray);
-          randomAgent.setToBiased();
-        }
-      });
-    
-      this.registry.set('isWorkflowRunning', false);
-      this.registry.set('currentPattern', "");
-      this.registry.set('currentDataset', 'baseball');
-      this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
+    this.registry.set('biasTypePool', ['factual', 'cherry', 'framing']); // Level3
+    console.log('[pool:set]', this.registry.get('biasTypePool'));
 
-      // ✅ 重置实例变量
-      this.isWorkflowAvailable = false;
-      this.selectedDataset = "none";
+    Agent.resetBiasedAgentsCount(); // reset the count of biased agents
+    Agent.maxAllowedBiased = 3;
 
-      // ✅ 清理可能存在的按钮引用
-      this.debateStartBtn = undefined;
-      this.baseBallBtn = undefined;
-      this.kidneyBtn = undefined;
+    this.time.delayedCall(100, () => {
+      const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
+      if (agentsArray.length > 0) {
+        Phaser.Utils.Array.Shuffle(agentsArray);
+        const chosenAgents = agentsArray.slice(0, 3);
+        chosenAgents.forEach(agent => agent.setToBiased());
+      }
+    });
+
+    this.registry.set('isWorkflowRunning', false);
+    this.registry.set('currentPattern', "");
+    this.registry.set('currentDataset', 'baseball');
+    this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
+
+    // ✅ 重置实例变量
+    this.isWorkflowAvailable = false;
+    this.selectedDataset = "none";
+
+    // ✅ 清理可能存在的按钮引用
+    this.debateStartBtn = undefined;
+    this.baseBallBtn = undefined;
+    this.kidneyBtn = undefined;
 
     //this.load.bitmapFont('myFont', '/assets/bitmapFont/minogramFont.png', '/assets/bitmapFont/minogramFont.xml');
 
@@ -281,15 +287,20 @@ export class Level3 extends ParentScene {
     });
 
     // Level 3: Framing & Ambiguity
-    this.add.text(-50, 20, 'Level 3: Framing & Ambiguity', {
-      fontSize: '18px',
-      fontFamily: 'Verdana',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 6, y: 4 }
-    })
-    .setScrollFactor(0)
-    .setDepth(2000);
+    // add title bar + info icon with tooltip
+    const LEVEL_TITLE = 'Level 3: Framing & Ambiguity';
+    const LEVEL_INFO =
+      'Framing & Ambiguity\n\n' +
+      'This type of hallucination manipulates the way information is presented by emphasizing certain aspects while downplaying or omitting others.\n\n' +
+      'It can also introduce ambiguous language or unclear definitions, leading to multiple interpretations.\n\n' +
+      'The goal is to identify misleading framing strategies and clarify vague or ambiguous statements.';
+
+    addTitleWithHoverInfo(this, LEVEL_TITLE, LEVEL_INFO, {
+      x: -50,
+      y: 20,
+      depth: 2000,
+    });
+
 
 
     // DifficultySelector
@@ -657,12 +668,17 @@ export class Level3 extends ParentScene {
     this.cameras.main.setZoom(zoom);
     this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
-    this.events.on('level-complete', () => {
-      this.createNextLevelButton();
-    });
-
     createHistoryButton(this, "level2");
 
+    this.events.on('level-complete', (payload?: { score: number }) => {
+      const score = payload?.score ?? this.registry.get('finalScore') ?? 0;
+
+      if (score >= 8) {
+        this.createNextLevelButton();
+      } else {
+        this.showTryAgainMessage(score); // 下面第3步新增的小函数
+      }
+    });
   }
 
   private async choosePattern(pattern: string) {
@@ -1051,13 +1067,30 @@ return result;
           scoreData.coding_reasons
         );
 
-        this.events.emit('level-complete');
+        // this.events.emit('level-complete');
         
-        console.log("first output", firstOutput);
-        console.log("finalDecision", secondOutput);
-        console.log("finalDecision2", finalOutput);
+        // console.log("first output", firstOutput);
+        // console.log("finalDecision", secondOutput);
+        // console.log("finalDecision2", finalOutput);
 
-        eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+        // eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+
+        // 1) 归一化并保存最终分数，便于其他地方读取
+        const finalScore = Number(scoreData.overall_score ?? 0);
+        this.registry.set('finalScore', finalScore);
+
+        // 2) 用 Phaser 事件把分数带出去（监听里按分数决定是否创建 Next 按钮）
+        this.events.emit('level-complete', { score: finalScore });
+
+        // 3) 全局总线，也把分数带上（可供其它场景/模块响应）
+        eventTargetBus.dispatchEvent(
+          new CustomEvent('signal', {
+            detail: { type: 'level-complete', level: 'level1', score: finalScore }
+          })
+        );
+    
+        // save the scores to history
+        saveHistory("level3", scoreData.overall_score);
     });
   } 
 
@@ -1231,6 +1264,28 @@ return result;
     this.startWorkflowBtn.off("pointerdown");
     this.startWorkflowBtn.on("pointerdown", newEvent);
     this.startWorkflowLabel.setText(eventName);
+  }
+
+  private showTryAgainMessage(score: number) {
+    const x = this.cameras.main.width - 52;
+    const y = this.cameras.main.height - 150;
+    const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
+    {
+      fontSize: '16px',
+      fontFamily: 'Verdana',
+      backgroundColor: '#5a2a2a',
+      color: '#ffffff',
+      padding: { x: 12, y: 8 },
+      stroke: '#ffffff',
+      strokeThickness: 2,
+      align: 'center'
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setAlpha(0);
+
+    this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
   }
 
   private createNextLevelButton() {

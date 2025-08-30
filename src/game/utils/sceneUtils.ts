@@ -312,20 +312,7 @@ export function setupZones(scene: any, objectsLayer: any, zoneName: string) {
       }
     });
   }
-
-
-  scene.tweens.add({
-  targets: [background, statusText],
-  scale: 1.1,
-  alpha: { from: 0.9, to: 1 },
-  duration: 1000,
-  yoyo: true,
-  repeat: -1,
-  ease: "Sine.easeInOut"
-  });
-
-    
-
+  
     // const statusText = scene.add.text(centerX, centerY + 20, task, {
     //   fontSize: "10px",
     //   color: "#ffffff",

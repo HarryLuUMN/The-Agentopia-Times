@@ -29,6 +29,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
 import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo} from './levelHelper';
+import { recorder } from '../utils/recorder';
 
 const level = "level3"
 
@@ -796,6 +797,7 @@ return result;
     }
   })
   .on("pointerdown", ()=>{
+    recorder.recordEvent('dataset_switched');
     if(this.selectedDataset !== 'baseball'){
       this.selectedDataset = "baseball";
       this.selectedText?.destroy();
@@ -891,6 +893,7 @@ return result;
       }
     })
     .on("pointerdown", ()=>{
+      recorder.recordEvent('dataset_switched');
       if(this.selectedDataset !== 'kidney'){
         this.selectedDataset = "kidney";
         this.selectedText?.destroy();
@@ -1331,6 +1334,9 @@ return result;
   });
 
   nextLevelBtn.on('pointerdown', () => {
+    recorder.recordEvent('next_level_clicked');
+    recorder.endRecord();
+
     this.scene.start('level1');
   });
 }

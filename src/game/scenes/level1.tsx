@@ -891,6 +891,7 @@ return result;
         this.kidneyBtn.setDepth(1010);
         
       }
+      recorder.recordEvent('dataset_switched');
     });
     // console.log("ready to attach info icon for kidney");
 
@@ -1321,8 +1322,8 @@ return result;
 
   nextLevelBtn.on('pointerdown', () => {
     recorder.recordEvent('next_level_clicked');
-    recorder.endRecord();
     
+
     this.scene.start('level2');
   });
 }

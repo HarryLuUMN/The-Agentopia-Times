@@ -19,6 +19,7 @@ import {
   kidneyStatLevel2,
   kidneyStatLevel3
 } from '../const';
+import { recorder } from "../game/utils/recorder";
 
 function hallucinationByType(t?: string) {
   switch (t) {
@@ -131,6 +132,7 @@ export async function createReport(
     reportBtn.on("pointerdown", () => {
         EventBus.emit("open-report", { department: zoneName+"-"+index });
     console.log("report button clicked", zoneName+"-"+index);
+    recorder.recordEvent(`report_clicked_${zoneName}-${index}`);
         });
 
     if (!scene.reportIcons) scene.reportIcons = [];

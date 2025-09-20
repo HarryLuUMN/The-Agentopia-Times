@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { key } from '../constants';
 import { Inventory } from './Player';
 import { EventBus } from '../EventBus';
+import { recorder } from '../utils/recorder';
 
 enum Animation {
   Left = 'player_left',
@@ -84,49 +85,6 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     });
   }
 }
-  public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
-
-
-
-  private agentInformation:string = "aaaaaaa";
-
-  public addMssgSprite(scene: Phaser.Scene, texture: string, frame?: string | number) {
-  if (this.mssgSprite) {
-    console.log("Updating message sprite for agent:", this.name);
-    this.mssgSprite.setTexture(texture, frame);
-
-    this.mssgSprite.removeAllListeners();
-    this.mssgSprite.disableInteractive();
-
-    if (texture === "agent_mssg") {
-      this.mssgSprite.setInteractive({ useHandCursor: true });
-      this.mssgSprite.on('pointerdown', () => {
-        console.log(`Message sprite of ${this.name} clicked!`);
-        this.changeNameTagColor('#00ff00');
-        EventBus.emit("open-agent-information", {
-          agent: this.name
-        });
-      });
-    }
-    return;
-  }
-
-  console.log("Adding message sprite to agent:", this.name);
-  this.mssgSprite = scene.add.image(this.x, this.y, texture, frame)
-    .setOrigin(0.5, 1)
-    .setDepth(10);
-
-  if (texture === "agent_mssg") {
-    this.mssgSprite.setInteractive({ useHandCursor: true });
-    this.mssgSprite.on('pointerdown', () => {
-      console.log(`Message sprite of ${this.name} clicked!`);
-      this.changeNameTagColor('#00ff00');
-      EventBus.emit("open-agent-information", {
-          agent: this.name
-        });
-    });
-  }
-}
 
 
 
@@ -145,19 +103,6 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   public getBiasType() {
     return this.biasType;
   }
-
-  public getAgentInformation(){
-    return this.agentInformation;
-  }
-
-  public setAgentInformation(info: string) {
-    this.agentInformation = info;
-    EventBus.emit("agent-information", {
-      agent: this.name,
-      mssg: this.getAgentInformation()
-    });
-  }
-
 
   public getAgentInformation(){
     return this.agentInformation;
@@ -448,6 +393,9 @@ update() {
     }
 
     private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
+      
+      recorder.recordEvent("agent_clicked");
+
       if (gameObject !== this) return;
       if (this.isBiased) return;
 

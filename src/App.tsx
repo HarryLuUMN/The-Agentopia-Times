@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react';
 import { PhaserGame } from './game/PhaserGame';
 import { EventBus } from './game/EventBus';
 import DraggableWindow from './components/DraggableWindow';
-import { testGraphChain } from './langgraph/testLanggraph';
 import {marked} from 'marked';
-import { generateChartImage } from './langgraph/visualizationGenerate';
-import { TEST_D3_SCRIPT } from './langgraph/const';
-import ConstitutionPanel from './components/ConstitutionPanel';
 
 export interface Report{
     report: string,
@@ -76,25 +72,6 @@ function App()
             console.log("agentProfiles", agentProfiles);
         }
 
-        const handleAgentInformation = (data: {agent: string, mssg: string}) =>{
-          console.log("Agent information received", data.agent, data.mssg);
-          const curReport:AgentInformation = {
-                mssg: data.mssg,
-                agent: data.agent,
-            }
-            // check if the report'department is already in the list, if yes, update the report; if no, add the report
-            const index = agentProfiles.findIndex((r) => r.agent === data.agent);
-            if(index !== -1){
-                agentProfiles[index] = curReport;
-                setAgentProfiles([...agentProfiles]);
-            }else{
-                agentProfiles.push(curReport);
-                setAgentProfiles([...agentProfiles]);
-            }
-
-            console.log("agentProfiles", agentProfiles);
-        }
-
         // have a handler for setting currentReport and open the reporting window
           const handleReportOpen = (data: { department: string; title?: string }) => {
     const index = report.findIndex((r) => r.department === data.department);
@@ -135,46 +112,6 @@ function App()
         if (!isOpen) setIsOpen(true);
     }
 };
-
-
-
-
-  const handleAgentInformationOpen = (data: { agent: string}) => {
-  const index = agentProfiles.findIndex((r) => r.agent === data.agent);
-  if(index !== -1){
-      setCurrentReport(agentProfiles[index].mssg);
-
-      marked.use({
-        extensions: [
-          {
-            name: 'highlight',
-            level: 'inline',
-            start(src) { return src.indexOf("=="); },
-            tokenizer(src, tokens) {
-              const rule = /^==([^=]+)==/;
-              const match = rule.exec(src);
-              if (match) {
-                return {
-                  type: 'highlight',
-                  raw: match[0],
-                  text: match[1],
-                  tokens: this.lexer.inlineTokens(match[1]),
-                };
-              }
-            },
-            renderer(token: any) {
-              return `<mark>${marked.parser(token.tokens)}</mark>`;
-            },
-          },
-        ],
-      });
-
-      console.log("agentProfiles[index].mssg", agentProfiles[index].mssg);
-
-      setHtmlReport(agentProfiles[index].mssg);
-      if(!isOpen)setIsOpen(true);
-  }
-}
 
 
 

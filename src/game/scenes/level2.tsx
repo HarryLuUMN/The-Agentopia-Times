@@ -28,7 +28,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo} from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton} from './levelHelper';
 import { recorder } from '../utils/recorder';
 
 
@@ -652,6 +652,7 @@ export class Level2 extends ParentScene {
       }
     });
 
+    createDownloadButton(this, "level2");
     createHistoryButton(this, "level2");
   }
 
@@ -897,6 +898,8 @@ export class Level2 extends ParentScene {
     this.attachInfoIcon(this.kidneyBtn, 'kidney_groundtruth');
 
     this.debateStartBtn.on('pointerdown', async () => {
+
+      recorder.recordEvent('simulation_started');
     
     // Reset old UIs(ReportUI and ScoresUI)
     resetReportIcons(this);

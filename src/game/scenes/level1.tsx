@@ -28,7 +28,7 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo  } from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton  } from './levelHelper';
 import { recorder } from '../utils/recorder';
 
 
@@ -634,6 +634,7 @@ export class Level1 extends ParentScene {
     this.cameras.main.setZoom(zoom);
     this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
+    createDownloadButton(this, "level1");
     createHistoryButton(this, "level1");
 
     // this.events.on('level-complete', () => {

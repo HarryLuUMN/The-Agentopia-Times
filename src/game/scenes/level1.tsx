@@ -28,7 +28,8 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo  } from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton  } from './levelHelper';
+import { recorder } from '../utils/recorder';
 
 
 const level = "level1"
@@ -633,6 +634,7 @@ export class Level1 extends ParentScene {
     this.cameras.main.setZoom(zoom);
     this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
+    createDownloadButton(this, "level1");
     createHistoryButton(this, "level1");
 
     // this.events.on('level-complete', () => {
@@ -649,6 +651,10 @@ export class Level1 extends ParentScene {
         this.showTryAgainMessage(score); // 下面第3步新增的小函数
       }
     });
+
+    // start recording
+    recorder.startRecord();
+
   }
 
   private async choosePattern(pattern: string) {
@@ -790,6 +796,7 @@ return result;
       this.baseBallBtn.setDepth(1010);
       
     }
+    recorder.recordEvent('dataset_switched');
   });
     // console.log("ready to attach info icon for baseball");
     this.attachInfoIcon(this.baseBallBtn, 'baseball_groundtruth');
@@ -885,12 +892,15 @@ return result;
         this.kidneyBtn.setDepth(1010);
         
       }
+      recorder.recordEvent('dataset_switched');
     });
     // console.log("ready to attach info icon for kidney");
 
     this.attachInfoIcon(this.kidneyBtn, 'kidney_groundtruth');
 
     this.debateStartBtn.on('pointerdown', async () => {
+
+      recorder.recordEvent('simulation_started');
     
       // Reset old UIs(ReportUI and ScoresUI)
       resetReportIcons(this);
@@ -1312,6 +1322,9 @@ return result;
   });
 
   nextLevelBtn.on('pointerdown', () => {
+    recorder.recordEvent('next_level_clicked');
+    
+
     this.scene.start('level2');
   });
 }

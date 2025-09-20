@@ -2,6 +2,29 @@
 import Phaser from 'phaser';
 import { key } from '../constants';
 import { Agent } from '../sprites/Agent';
+import { recorder } from '../utils/recorder';
+
+export function createDownloadButton(scene: Phaser.Scene, level: string) {
+  const screenWidth = scene.cameras.main.width;
+  const screenHeight = scene.cameras.main.height;
+
+  const button = scene.add.text(screenWidth - 65, screenHeight - 80, '📊 Data Download', {
+    fontSize: '18px',
+    fontFamily: 'Verdana',
+    color: '#ffffff',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 },
+  })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setInteractive();
+
+  button.on('pointerdown', () => {
+    recorder.endRecord();
+  });
+}
+
 
 // === History ===
 interface HistoryRecord {
@@ -47,6 +70,8 @@ export function createHistoryButton(scene: Phaser.Scene, level: string) {
     showHistory(scene, level);
   });
 }
+
+
 
 // Display history
 function showHistory(scene: Phaser.Scene, level: string) {

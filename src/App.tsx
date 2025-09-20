@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react';
 import { PhaserGame } from './game/PhaserGame';
 import { EventBus } from './game/EventBus';
 import DraggableWindow from './components/DraggableWindow';
-import { testGraphChain } from './langgraph/testLanggraph';
 import {marked} from 'marked';
-import { generateChartImage } from './langgraph/visualizationGenerate';
-import { TEST_D3_SCRIPT } from './langgraph/const';
-import ConstitutionPanel from './components/ConstitutionPanel';
 
 export interface Report{
     report: string,
@@ -30,7 +26,6 @@ function App()
     const [isConstitutionOpen, setIsConstitutionOpen] = useState(false);
     const [agentProfiles, setAgentProfiles] = useState<AgentInformation[]>([]);
     const [windowTitle, setWindowTitle] = useState<string>("Report");
-
 
 
     const [charts, setCharts] = useState<{id: string; code: string}[]>([]);
@@ -120,8 +115,7 @@ function App()
 
 
 
-
-  const handleAgentInformationOpen = (data: { agent: string}) => {
+        const handleAgentInformationOpen = (data: { agent: string}) => {
   const index = agentProfiles.findIndex((r) => r.agent === data.agent);
   if(index !== -1){
       setCurrentReport(agentProfiles[index].mssg);

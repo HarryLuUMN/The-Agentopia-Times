@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { key } from '../constants';
 import { Inventory } from './Player';
 import { EventBus } from '../EventBus';
+import { recorder } from '../utils/recorder';
 
 enum Animation {
   Left = 'player_left',
@@ -35,6 +36,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
   private wasDragged: boolean = false; // if user drag the agent now
 
   public isDrag: boolean = false; // track drag state
+
 
   // public static biasedAgentsCount: number = 0; // Calculate the current number of biased agents in this level
 
@@ -114,6 +116,7 @@ export class Agent extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+
 public playDialogue(
   scene: Phaser.Scene,
   text: string,
@@ -166,13 +169,14 @@ public playDialogue(
     }
   });
 
-  // Make the bubble position always follow Agent
+
   scene.events.on("update", () => {
     if (textObj && textObj.active) {
       textObj.setPosition(this.x + 40, this.y - 40);
     }
   });
 }
+
 
   public assignToWorkplace: boolean = false;
   private activationFunction: (state: any) => any = (state: any) => {
@@ -389,6 +393,9 @@ update() {
     }
 
     private onClick(pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) {
+      
+      recorder.recordEvent("agent_clicked");
+
       if (gameObject !== this) return;
       if (this.isBiased) return;
 
@@ -398,6 +405,30 @@ update() {
         const oldest = Agent.biasedOrder.shift();
         if (oldest && oldest !== this) oldest.setToUnbiased();
         this.setToBiased();
+      }
+      if (gameObject === this) {
+        console.log(`Agent ${this.name} clicked!`);
+
+        const agentInfo = this.getAgentInformation();
+        console.log(`Agent Information: ${agentInfo}`);
+
+        // If there is already another biased agent, restore it first.        
+        if (Agent.currentBiasedAgent && Agent.currentBiasedAgent !== this) {
+          Agent.currentBiasedAgent.setToUnbiased();
+        }
+
+        if (!this.isBiased) {
+          // Set to biased
+          this.name = "Biased " + this.name;
+          this.isBiased = true;
+          this.setTexture(key.atlas.bias);
+          this.createAnimations(key.atlas.bias);
+          this.bias = 'biased';
+          // Agent.biasedAgentsCount = 1;
+          // Agent.currentBiasedAgent = this;
+
+          console.log("Agent is now biased:", this.name);
+        }
       }
     }
 
@@ -451,8 +482,6 @@ update() {
         name: this.name,
       });
     }
-
-
 
 
   private createWorkAnimations(atlasKey: string) {

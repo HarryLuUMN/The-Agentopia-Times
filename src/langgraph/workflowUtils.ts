@@ -572,6 +572,7 @@ export async function createWritingJudge(message: string) {
 
     ### Rule for Scoring: 
 
+    - If the final result statement of the paragraph is "Jeter is better than Justice" or "Treatment B is better than Treatment A" then minus 5 points,
     - It is okay, if the paragraph mentioned the "Jeter is betetr than Jutsice in overall" or "Treatment B is better than Treatment A in overall", 
       but if didn't mention the each-year or each-category comparison envidence, minus 5 points
     - if the paragraph didn't compare the two players for each season, or didn't compare the large/small stone treatments, minus 5 points

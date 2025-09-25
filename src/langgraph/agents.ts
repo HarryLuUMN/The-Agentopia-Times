@@ -30,7 +30,7 @@ function hallucinationByType(t?: string) {
     case 'framing':
       return 'Use **framing and ambiguity** to subtly manipulate readers’ impressions without explicit lies.';
     default:
-      return 'stay neutral and avoid misleading statements.';
+      return 'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report';
   }
 }
 
@@ -168,7 +168,7 @@ export function createJournalist(
 
         const hType = agent.getBiasType();
         const hallucination = agent.getBias() === '' ? 
-        'stay neutral and avoid misleading statements.' : 
+        'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report conclusion' : 
         hallucinationByType(hType);
 
 
@@ -232,8 +232,8 @@ export function createManager(
         const stats = pickStatsBy(currentDataset, hType);
 
         const hallucination = agent.getBias() === '' 
-        ? 'stay neutral and avoid misleading statements.' 
-        : hallucinationByType(hType);
+        ? 'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report conclusion' : 
+        hallucinationByType(hType);
 
         let msg:any = '';
         let scoreData:any = {};

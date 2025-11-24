@@ -2,6 +2,16 @@
 
 Understanding and Mitigating Hallucinations in Multi-Agent LLM Systems via Data Journalism Gameplay
 
+The paper was accpted by IEEE VIS 2025 (short paper track). 
+
+## Authors
+
+Yilin Lu, Shurui Du, Qianwen Wang
+
+## Video
+
+Conference Speech: https://m.youtube.com/watch?v=AJ95H_3rPaw&feature=youtu.be 
+
 ## Abstract
 
 Large language models (LLMs) are increasingly used to support data analysis and visualization tasks but remain prone to hallucinations and produce incorrect results. 

@@ -4,6 +4,8 @@ Understanding and Mitigating Hallucinations in Multi-Agent LLM Systems via Data 
 
 The paper was accpted by IEEE VIS 2025 (short paper track). 
 
+IEEE Xplorer: https://ieeexplore.ieee.org/abstract/document/11298897 
+
 ## Authors
 
 Yilin Lu, Shurui Du, Qianwen Wang

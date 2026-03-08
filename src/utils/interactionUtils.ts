@@ -1,3 +1,5 @@
+import { recorder } from "../game/utils/recorder";
+
 export function createHoveredWindow(
     scene: any,
     pointer: any,
@@ -66,5 +68,6 @@ export function addEventToStrategy(
             scene.registry.set("workflowConfig", tempConfig);
             btn.setTexture(strategy);
             console.log("Updated workflowConfig:", scene.registry.get("workflowConfig"));
+            recorder.recordEvent(`strategy_selected_${strategy}`); // Log event when strategy is selected
         });
 }

@@ -5,7 +5,22 @@ import { initializeLLM } from './chainingUtils';
 import { generateImage } from './dalleUtils';
 import { generateChartImage } from './visualizationGenerate';
 import { webStyle } from './const';
-import { baseballDatasetStatistic, baseballGroundTruth, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic, kidneyGroundTruth } from '../const';
+// import { baseballDatasetStatistic, baseballGroundTruth, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic, kidneyGroundTruth } from '../const';
+import {
+  kidneyGroundTruth,
+  baseballGroundTruth,
+
+  baseballDatasetStatistic,
+  kidneyDatasetStatistic,
+
+  baseballStatLevel1,
+  baseballStatLevel2,
+  baseballStatLevel3,
+  kidneyStatLevel1,
+  kidneyStatLevel2,
+  kidneyStatLevel3
+} from '../const';
+
 
 export function returnDatasetDescription(scene: any) {
     let datasetDescription = `The Justice and Jeter Baseball Dataset is a classic example illustrating Simpson's Paradox, where trends observed within individual groups reverse when the groups are combined. In the 1995 and 1996 MLB seasons, David Justice had a higher batting average than Derek Jeter in each year individually. However, when the data from both years are combined, Jeter's overall batting average surpasses Justice's. This counterintuitive result arises because Jeter had significantly more at-bats in 1996—a year in which he performed exceptionally well—while Justice had more at-bats in 1995, when his performance was comparatively lower. The imbalance in the distribution of at-bats across the two years affects the combined averages, leading to the paradoxical outcome. This dataset serves as a compelling demonstration of how aggregated data can sometimes lead to misleading conclusions if underlying subgroup trends and data distributions are not carefully considered. ​`;
@@ -16,23 +31,43 @@ export function returnDatasetDescription(scene: any) {
 }
 
 // for analysis
-export async function startDataFetcher(scene: any, agent: any) {
+export async function startDataFetcher(scene: any, agent: any, level: string) {
     // let datasetPath = covidPath;
+
+    // let stats = baseballDatasetStatistic;
+
+    // console.log("biased data fetcher,", agent.getBias());
+    // if (scene.registry.get('currentDataset') === 'kidney') {
+    //     // datasetPath = ucbPath;
+    //     stats = kidneyDatasetStatistic;
+    // }
+    // if(agent.getBias()!== '') {
+    //   if(scene.registry.get('currentDataset') === 'kidney') {
+    //     stats = biasedKidneyDatasetStatistic
+    //   }else{
+    //     stats = biasedBaseballDatasetStatistic;
+    //   }
+    // }
 
     let stats = baseballDatasetStatistic;
 
-    console.log("biased data fetcher,", agent.getBias());
-    if (scene.registry.get('currentDataset') === 'kidney') {
-        // datasetPath = ucbPath;
-        stats = kidneyDatasetStatistic;
+    if (scene.registry.get("currentDataset") === "kidney") {
+      stats = kidneyDatasetStatistic;
     }
-    if(agent.getBias()!== '') {
-      if(scene.registry.get('currentDataset') === 'kidney') {
-        stats = biasedKidneyDatasetStatistic
-      }else{
-        stats = biasedBaseballDatasetStatistic;
+
+    if (agent.getBias() !== "") {
+      const level = scene.registry.get("currentLevel");
+      if (scene.registry.get("currentDataset") === "kidney") {
+        if (level === "level1") stats = kidneyStatLevel1;
+        else if (level === "level2") stats = kidneyStatLevel2;
+        else if (level === "level3") stats = kidneyStatLevel3;
+      } else {
+        if (level === "level1") stats = baseballStatLevel1;
+        else if (level === "level2") stats = baseballStatLevel2;
+        else if (level === "level3") stats = baseballStatLevel3;
       }
     }
+
 
     let datasetPath = baseballPath;
     let researchQuestions = `
@@ -244,7 +279,7 @@ export function createScoreUI(
     padding: { x: 20, y: 16 },
     wordWrap: { width: 320 },
     align: "left",
-  }).setScrollFactor(0).setDepth(2000).setVisible(false).setResolution(2);
+  }).setScrollFactor(0).setDepth(2002).setVisible(false).setResolution(2);
 
   const textBounds = scene.scorePanel.getBounds();
   const panelWidth = textBounds.width + 20;
@@ -255,7 +290,7 @@ export function createScoreUI(
   scene.scorePanelBg = scene.add.rectangle(panelX, panelY, panelWidth, panelHeight, 0x000000, 0.5)
     .setStrokeStyle(2, 0xffffff)
     .setScrollFactor(0)
-    .setDepth(1999)
+    .setDepth(2001)
     .setVisible(false);
 }
 
@@ -407,14 +442,15 @@ export async function startHTMLConstructor(
 
 `;
 
-    let reportMessage = `${style}${body}`;
+  let reportMessage = `${style}${body}`;
 
-    console.log("graph:vis-report msg: ", reportMessage);
+  console.log("graph:vis-report msg: ", reportMessage);
 
-    EventBus.emit('final-report', {
-        report: reportMessage,
-        department: department+"-"+index,
-    });
+  EventBus.emit('final-report', {
+      report: reportMessage,
+      department: department+"-"+index,
+      title: "Final Report"
+  });
 }
 
 export function startScoreComputer(judgeData: {
@@ -431,7 +467,7 @@ export function startScoreComputer(judgeData: {
   const writingNumeric = parseScore(judgeData.writing_score); // 8
   const codingNumeric = parseScore(judgeData.coding_score);   // 7
 
-  const overall = ((writingNumeric * 2 + codingNumeric * 0.5) / 25 * 10).toFixed(2);
+  const overall = ((writingNumeric * 1.5 + codingNumeric * 1) / 25 * 10).toFixed(2);
 
   return {
     overall_score: overall,
@@ -477,14 +513,16 @@ export async function createVisualizationJudge(message: string) {
 
       ### Requirements:
 
-      - Use the 6 evaluation dimensions: Structure, Encoding, Mapping, Interaction, Validity, Clarity.
-      - Rate the overall visualization from 1 to 10.
-      - In **reasons[]**, include **short concise deduction points**, like "- Axis label missing" or "- Tooltip only, no filtering".
-      - In **comments[]**, explain the evaluation with 6–8 complete sentences.
-      - Avoid markdown, no HTML, no extra explanations or wrapping.
-      - Do not echo or paraphrase the input.
-      - Only return the object — no other explanation.
-
+      - use the following criteria to evaluate the visualization:
+        - if using four sub-charts as visualization, then rate it highly(e.g., 10).
+        - if it only using two, then rate it low(e.g., 1).
+      - after evaluating the baseline score, consider the following factors for potential bonus or penalty points:  
+        - clear labels: +2
+        - effective use of color: +2
+        - bug free on visualziation: +2
+        - overall coherence: +2
+        - visual engaging: +2
+      Also included your reasons and comments for each bonus and criteria in the output json data structure. 
       ---
 
       Evaluate the following Vega-Lite spec:
@@ -534,6 +572,7 @@ export async function createWritingJudge(message: string) {
 
     ### Rule for Scoring: 
 
+    - If the final result statement of the paragraph is "Jeter is better than Justice" or "Treatment B is better than Treatment A" then minus 5 points,
     - It is okay, if the paragraph mentioned the "Jeter is betetr than Jutsice in overall" or "Treatment B is better than Treatment A in overall", 
       but if didn't mention the each-year or each-category comparison envidence, minus 5 points
     - if the paragraph didn't compare the two players for each season, or didn't compare the large/small stone treatments, minus 5 points

@@ -28,7 +28,11 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton} from './levelHelper';
+import { recorder } from '../utils/recorder';
 
+
+const level = "level2";
 
 export interface Zone {
   zone: Phaser.GameObjects.Zone;
@@ -81,185 +85,111 @@ export class Level2 extends ParentScene {
   private selectedText?: Phaser.GameObjects.Text;
   private selectedDataset: string = "none";
 
-private attachInfoIcon(
-  target: Phaser.GameObjects.Image,
-  imageKey: string,
-  offsetX = 35,
-  offsetY = -20
-) {
-  const icon = this.add.text(
-    target.x + offsetX,
-    target.y + offsetY,
-    '🛈',
-    {
-      fontSize: '25px',
-      color: '#ffffff',
-      // backgroundColor: '#0000ff',
-      fontStyle: 'normal',
-      padding: { x: 8, y: 6 },
-      fontFamily: 'Verdana',
-    }
-  )
-  .setScrollFactor(0)
-  .setDepth(9999)
-  .setOrigin(0.5)
-  .setResolution(2)
-  .setInteractive();
+  // private requiredBiasedAgents: number = 1; // the number of the biased agents in this level
+  // private biasedAgentsStatusText!: Phaser.GameObjects.Text;
 
-  // console.log(
-  //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
-  // );
-
-icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-  const hoverWindowX = pointer.x + 230;
-  const hoverWindowY = pointer.y - 20;
-
-  if (!this.hoverWindow) {
-    const hoverText = this.getInfoText(imageKey);
-
-    // Step 1: Create the text and hide it first
-    this.hoverWindowText = this.add.text(
-      hoverWindowX,
-      hoverWindowY,
-      hoverText,
+  private attachInfoIcon(
+    target: Phaser.GameObjects.Image,
+    imageKey: string,
+    offsetX = 35,
+    offsetY = -20
+  ) {
+    const icon = this.add.text(
+      target.x + offsetX,
+      target.y + offsetY,
+      '🛈',
       {
-        fontFamily: 'Verdana',
-        fontSize: '16px',
+        fontSize: '25px',
         color: '#ffffff',
-        wordWrap: { width: 500 },
+        // backgroundColor: '#0000ff',
+        fontStyle: 'normal',
+        padding: { x: 8, y: 6 },
+        fontFamily: 'Verdana',
       }
     )
     .setScrollFactor(0)
-    .setDepth(1012)
-    .setAlpha(1)
-    .setVisible(false)
-    .setOrigin(0.5, 0.5)
-    .setResolution(2);
+    .setDepth(9999)
+    .setOrigin(0.5)
+    .setResolution(2)
+    .setInteractive();
+
+    // console.log(
+    //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
+    // );
+
+    icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
+      const hoverWindowX = pointer.x + 230;
+      const hoverWindowY = pointer.y - 20;
+
+      if (!this.hoverWindow) {
+        const hoverText = this.getInfoText(imageKey);
+
+        // Step 1: Create the text and hide it first
+        this.hoverWindowText = this.add.text(
+          hoverWindowX,
+          hoverWindowY,
+          hoverText,
+          {
+            fontFamily: 'Verdana',
+            fontSize: '16px',
+            color: '#ffffff',
+            wordWrap: { width: 500 },
+          }
+        )
+        .setScrollFactor(0)
+        .setDepth(1012)
+        .setAlpha(1)
+        .setVisible(false)
+        .setOrigin(0.5, 0.5)
+        .setResolution(2);
 
 
-    // Step 2: Getting the text size
-    const bounds = this.hoverWindowText.getBounds();
-    const padding = 20;
+        // Step 2: Getting the text size
+        const bounds = this.hoverWindowText.getBounds();
+        const padding = 20;
 
-    // Step 3: Adding a Background
-    this.hoverWindow = this.add.rectangle(
-      hoverWindowX,
-      hoverWindowY,
-      bounds.width + padding,
-      bounds.height + padding,
-      0x000000
-    )
-    .setScrollFactor(0)
-    .setDepth(1011)
-    .setAlpha(0.9)
-    .setStrokeStyle(2, 0xffffff);
+        // Step 3: Adding a Background
+        this.hoverWindow = this.add.rectangle(
+          hoverWindowX,
+          hoverWindowY,
+          bounds.width + padding,
+          bounds.height + padding,
+          0x000000
+        )
+        .setScrollFactor(0)
+        .setDepth(1011)
+        .setAlpha(0.9)
+        .setStrokeStyle(2, 0xffffff);
 
-    // Step 4: Displaying Text
-    this.hoverWindowText.setVisible(true);
+        // Step 4: Displaying Text
+        this.hoverWindowText.setVisible(true);
+      } 
+    });
+
+    icon.on('pointerout', () => {
+      this.hoverWindow?.destroy();
+      this.hoverWindowText?.destroy();
+      this.hoverWindow = undefined;
+      this.hoverWindowText = undefined;
+    });
   }
-});
-
-  icon.on('pointerout', () => {
-    this.hoverWindow?.destroy();
-    this.hoverWindowText?.destroy();
-    this.hoverWindow = undefined;
-    this.hoverWindowText = undefined;
-  });
-}
 
 
 
-// helper method: returns the corresponding message text based on the imageKey
-private getInfoText(imageKey: string): string {
-  switch(imageKey) {
-    case 'baseball_groundtruth':
-      return baseballGroundTruth;
-    case 'kidney_groundtruth':
-      return kidneyGroundTruth;
-    default:
-      return 'Dataset Info';
+  // helper method: returns the corresponding message text based on the imageKey
+  private getInfoText(imageKey: string): string {
+    switch(imageKey) {
+      case 'baseball_groundtruth':
+        return baseballGroundTruth;
+      case 'kidney_groundtruth':
+        return kidneyGroundTruth;
+      default:
+        return 'Dataset Info';
+    }
   }
-}
-
-// private attachInfoIcon(
-//   target: Phaser.GameObjects.Image,
-//   imageKey: string,
-//   offsetX = 35,
-//   offsetY = -35
-// ) {
-//   const x = target.x + offsetX;
-//   const y = target.y + offsetY;
-
-//   const circle = this.add.circle(0, 0, 16, 0xcccccc)
-//     .setScrollFactor(0);
-
-//   const text = this.add.text(0, 0, 'i', {
-//     fontSize: '18px',
-//     color: '#000000',
-//     fontFamily: 'Verdana',
-//   })
-//     .setOrigin(0.5)
-//     .setScrollFactor(0);
-
-//   const icon = this.add.container(x, y, [circle, text])
-//     .setSize(32, 32)
-//     .setInteractive(
-//       new Phaser.Geom.Rectangle(-16, -16, 32, 32),
-//       Phaser.Geom.Rectangle.Contains
-//     )
-//     .setScrollFactor(0)
-//     .setDepth(10000);
-
-//   console.log(`Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`);
-//   console.log(`Target button depth: ${target.depth}, Icon depth: ${icon.depth}`);
-
-//   icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
-//     const hoverWindowX = pointer.x + 20;
-//     const hoverWindowY = pointer.y - 20;
-
-//     if (!this.hoverWindow) {
-//       this.hoverWindow = this.add.rectangle(
-//         hoverWindowX,
-//         hoverWindowY,
-//         135,
-//         50,
-//         0x000000
-//       )
-//         .setScrollFactor(0)
-//         .setDepth(10001)
-//         .setAlpha(0.9)
-//         .setStrokeStyle(2, 0xffffff);
-
-//       this.hoverWindowText = this.add.text(
-//         hoverWindowX,
-//         hoverWindowY,
-//         this.getInfoText(imageKey)
-//       )
-//         .setScrollFactor(0)
-//         .setDepth(10002)
-//         .setAlpha(1)
-//         .setOrigin(0.5, 0.5)
-//         .setStyle({
-//           fontFamily: 'Verdana',
-//           fontSize: '12px',
-//           color: '#ffffff',
-//         });
-//     }
-//   });
-
-//   icon.on('pointerout', () => {
-//     this.hoverWindow?.destroy();
-//     this.hoverWindowText?.destroy();
-//     this.hoverWindow = undefined;
-//     this.hoverWindowText = undefined;
-//   });
-
-//   return icon;
-// }
-
 
   constructor() {
-    super("level2");
+    super(level);
     this.sceneName = "";
     eventTargetBus.addEventListener("signal", (event:any) => {
       console.log(`Level2 received: ${event.detail}`);
@@ -273,6 +203,34 @@ private getInfoText(imageKey: string): string {
 
   create() {
 
+    this.registry.set('biasTypePool', ['factual', 'cherry']); // Level2
+
+    Agent.resetBiasedAgentsCount(); // reset the count of biased agents
+    Agent.maxAllowedBiased = 2;
+
+    this.time.delayedCall(100, () => {
+      const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
+      if (agentsArray.length > 0) {
+        Phaser.Utils.Array.Shuffle(agentsArray);
+        const chosenAgents = agentsArray.slice(0, 2);
+        chosenAgents.forEach(agent => agent.setToBiased());
+      }
+    });
+
+      this.registry.set('isWorkflowRunning', false);
+      this.registry.set('currentPattern', "");
+      this.registry.set('currentDataset', 'baseball');
+      this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
+
+      // ✅ 重置实例变量
+      this.isWorkflowAvailable = false;
+      this.selectedDataset = "none";
+
+      // ✅ 清理可能存在的按钮引用
+      this.debateStartBtn = undefined;
+      this.baseBallBtn = undefined;
+      this.kidneyBtn = undefined;
+
     //this.load.bitmapFont('myFont', '/assets/bitmapFont/minogramFont.png', '/assets/bitmapFont/minogramFont.xml');
 
     // for testing
@@ -285,34 +243,56 @@ private getInfoText(imageKey: string): string {
     // Initialize the HUD array
     this.hudElements = [];
 
-     // reset button
-  const resetButton = this.add.text(20, 20, '⟳ Reset', {
-    fontSize: '18px',
-    fontFamily: 'Verdana',
-    color: '#ffffff',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: { x: 10, y: 5 },
-  })
-  .setOrigin(0, 0)
-  .setDepth(2000)
-  .setScrollFactor(0)
-  .setInteractive();
+    createSimpleInstructionHUD(this); // Create a top note bar
 
-  resetButton.on('pointerdown', () => {
-    window.location.reload();
-  });
+    // reset button
+    const resetButton = this.add.text(-45, 220, '⟳ Reset', {
+      fontSize: '18px',
+      fontFamily: 'Verdana',
+      color: '#ffffff',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      padding: { x: 10, y: 5 },
+    })
+    .setOrigin(0, 0)
+    .setDepth(2000)
+    .setScrollFactor(0)
+    .setInteractive();
 
-    
+    resetButton.on('pointerdown', () => {
+      window.location.reload();
+    });
 
-    setupScene.call(this, "office");
+    // Level 2: Cherry-picking & Overgeneralization
+    // add title bar + info icon with tooltip
+    const LEVEL_TITLE = 'Level 2: Cherry-picking & Overgeneralization';
+    const LEVEL_INFO =
+      'Cherry-picking & Overgeneralization\n\n' +
+      'This type of hallucination selectively presents information or evidence that supports a biased conclusion, while ignoring contradictory data.\n\n' +
+      'It may also make overly broad claims based on limited or incomplete evidence.\n\n' +
+      'The goal is to detect when conclusions are drawn from incomplete or one-sided information.';
+
+    addTitleWithHoverInfo(this, LEVEL_TITLE, LEVEL_INFO, {
+      x: -50,
+      y: 20,
+      depth: 2000,
+    });
+
+
+
+    // DifficultySelector
+    createDifficultySelector(this);
+
+    addPDFIcon(this);
+
+    setupScene.call(this, "level2_office");
 
     // register a global variable
-    this.registry.set('isWorkflowRunning', false);
-    // register a global variable for pattern choosing
-    // currentPattern === "" -> no pattern is chosen
-    this.registry.set('currentPattern', "");
-    this.registry.set('currentDataset', 'baseball');
-    this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
+    // this.registry.set('isWorkflowRunning', false);
+    // // register a global variable for pattern choosing
+    // // currentPattern === "" -> no pattern is chosen
+    // this.registry.set('currentPattern', "");
+    // this.registry.set('currentDataset', 'baseball');
+    // this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
 
     console.log("isWorkflowRunning", this.registry.get('isWorkflowRunning'));
 
@@ -645,24 +625,35 @@ private getInfoText(imageKey: string): string {
 
     }
 
+    // 获取 tilemap 的尺寸
+    const mapWidth = this.tilemap.widthInPixels;
+    const mapHeight = this.tilemap.heightInPixels;
 
-  // 获取 tilemap 的尺寸
-  const mapWidth = this.tilemap.widthInPixels;
-  const mapHeight = this.tilemap.heightInPixels;
+    // 获取画布的尺寸
+    const canvasWidth = this.scale.width;
+    const canvasHeight = this.scale.height;
 
-  // 获取画布的尺寸
-  const canvasWidth = this.scale.width;
-  const canvasHeight = this.scale.height;
+    // 计算缩放比例
+    const zoomX = canvasWidth / mapWidth;
+    const zoomY = canvasHeight / mapHeight;
+    const zoom = Math.min(zoomX, zoomY);
 
-  // 计算缩放比例
-  const zoomX = canvasWidth / mapWidth;
-  const zoomY = canvasHeight / mapHeight;
-  const zoom = Math.min(zoomX, zoomY);
+    // 设置摄像头缩放和中心
+    this.cameras.main.setZoom(zoom);
+    this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
-  // 设置摄像头缩放和中心
-  this.cameras.main.setZoom(zoom);
-  this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
+    this.events.on('level-complete', (payload?: { score: number }) => {
+      const score = payload?.score ?? this.registry.get('finalScore') ?? 0;
 
+      if (score >= 8) {
+        this.createNextLevelButton();
+      } else {
+        this.showTryAgainMessage(score); // 下面第3步新增的小函数
+      }
+    });
+
+    createDownloadButton(this, "level2");
+    createHistoryButton(this, "level2");
   }
 
   private async choosePattern(pattern: string) {
@@ -676,41 +667,42 @@ private getInfoText(imageKey: string): string {
       console.log("route result", result);
     }
     console.log("MAS produced results - inside function", result);
+    await new Promise((resolve) => {
+      render(
+          <Typewriter
+              text={result}
+              onEnd={() => {
+                  state.isTypewriting = false;
+                  resolve(null); // Resolves the promise when Typewriter completes
+              }}
+          />,
+          this,
+      );
+  });
+
+  // Step 3: Call Evaluator Function AFTER Typewriter finishes
+  const evaluation = await evaluateCustomerSupportResponse(pattern, result);
+  console.log("Evaluator Feedback:", evaluation);
+
+  // Step 4: Render Evaluator's Feedback and WAIT until it's finished
   await new Promise((resolve) => {
-    render(
-        <Typewriter
-            text={result}
-            onEnd={() => {
-                state.isTypewriting = false;
-                resolve(null); // Resolves the promise when Typewriter completes
-            }}
-        />,
-        this,
-    );
-});
+      render(
+          <Typewriter
+              text={`Evaluator Feedback:\n${evaluation}`}
+              onEnd={() => {
+                  state.isTypewriting = false;
+                  resolve(null); // Resolves the promise when second Typewriter completes
+              }}
+          />,
+          this,
+      );
+  });
 
-// Step 3: Call Evaluator Function AFTER Typewriter finishes
-const evaluation = await evaluateCustomerSupportResponse(pattern, result);
-console.log("Evaluator Feedback:", evaluation);
-
-// Step 4: Render Evaluator's Feedback and WAIT until it's finished
-await new Promise((resolve) => {
-    render(
-        <Typewriter
-            text={`Evaluator Feedback:\n${evaluation}`}
-            onEnd={() => {
-                state.isTypewriting = false;
-                resolve(null); // Resolves the promise when second Typewriter completes
-            }}
-        />,
-        this,
-    );
-});
-
-return result;
+  return result;
 }
 
   update() {
+
     setZonesExitingDecoration(this.parallelZones, this.agentGroup);
     setZonesExitingDecoration(this.votingZones, this.agentGroup);
     setZonesExitingDecoration(this.chainingZones, this.agentGroup);
@@ -726,7 +718,7 @@ return result;
   ) {
     this.registry.set('currentPattern', 'parallel');
     this.isWorkflowAvailable = true;
-    console.log("All zones are occupied!");
+    // console.log("All zones are occupied!");
     // create a start workflow button
     this.debateStartBtn = this.add
     .image(0, 330, 'start')
@@ -778,6 +770,7 @@ return result;
     }
   })
   .on("pointerdown", ()=>{
+    recorder.recordEvent('dataset_switched');
     if(this.selectedDataset !== 'baseball'){
       this.selectedDataset = "baseball";
       this.selectedText?.destroy();
@@ -804,7 +797,7 @@ return result;
       
     }
   });
-    console.log("ready to attach info icon for baseball");
+    // console.log("ready to attach info icon for baseball");
     this.attachInfoIcon(this.baseBallBtn, 'baseball_groundtruth');
     
 
@@ -873,6 +866,7 @@ return result;
       }
     })
     .on("pointerdown", ()=>{
+      recorder.recordEvent('dataset_switched');
       if(this.selectedDataset !== 'kidney'){
         this.selectedDataset = "kidney";
         this.selectedText?.destroy();
@@ -904,6 +898,8 @@ return result;
     this.attachInfoIcon(this.kidneyBtn, 'kidney_groundtruth');
 
     this.debateStartBtn.on('pointerdown', async () => {
+
+      recorder.recordEvent('simulation_started');
     
     // Reset old UIs(ReportUI and ScoresUI)
     resetReportIcons(this);
@@ -977,16 +973,27 @@ return result;
           // Insert prompts into the graphs below:
           if(workflowConfig[i] === "voting"){
             console.log("construct voting graph");
-            const graph = constructVotingGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i);
+            const graph = constructVotingGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
           } else if(workflowConfig[i] === "sequential") {
             console.log("construct sequential graph");
-            const graph = constructSequentialGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i);
+            const graph = constructSequentialGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
           } else if(workflowConfig[i] === "single_agent") {
-            console.log("construct single agent graph");
-            const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i);
+            // console.log("construct single agent graph");
+            // const graph = constructSingleAgentGraph(agentsParameter, this, this.tilemap, firstPosition, secondPosition, i, level);
+            // graphs.push(graph);
+            const roomZones = datamaps[i];
+            const chosen = pickAgentForSingleStrict(roomZones, this.agentList);
+
+            if (!chosen) {
+              console.warn("No agent available for single_agent room", i);
+              continue;
+            }
+            
+            const graph = constructSingleAgentGraph([chosen], this, this.tilemap, firstPosition, secondPosition, i, level);
             graphs.push(graph);
+            continue;
           }
         }
 
@@ -1037,30 +1044,74 @@ return result;
           scoreData.writing_reasons,
           scoreData.coding_reasons
         );
-      
 
-        console.log("first output", firstOutput);
-        console.log("finalDecision", secondOutput);
-        console.log("finalDecision2", finalOutput);
+        // this.events.emit('level-complete');
 
-        eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+
+        // console.log("first output", firstOutput);
+        // console.log("finalDecision", secondOutput);
+        // console.log("finalDecision2", finalOutput);
+
+        // eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+                // 1) 归一化并保存最终分数，便于其他地方读取
+        const finalScore = Number(scoreData.overall_score ?? 0);
+        this.registry.set('finalScore', finalScore);
+
+        // 2) 用 Phaser 事件把分数带出去（监听里按分数决定是否创建 Next 按钮）
+        this.events.emit('level-complete', { score: finalScore });
+
+        // 3) 全局总线，也把分数带上（可供其它场景/模块响应）
+        eventTargetBus.dispatchEvent(
+          new CustomEvent('signal', {
+            detail: { type: 'level-complete', level: 'level1', score: finalScore }
+          })
+        );
+    
+        // save the scores to history
+        saveHistory("level2", scoreData.overall_score);
     });
   } 
 
 
-  if(
-    this.registry.get('isWorkflowRunning')===false
-    &&!areAllZonesOccupied(this.parallelZones)
-    &&!areAllZonesOccupied(this.votingZones)
-    &&!areAllZonesOccupied(this.routeZones)
-  ){
+  // if(
+  //   this.registry.get('isWorkflowRunning')===false
+  //   &&!areAllZonesOccupied(this.parallelZones)
+  //   &&!areAllZonesOccupied(this.votingZones)
+  //   &&!areAllZonesOccupied(this.routeZones)
+  // ){
+  //   this.registry.('currentPattern', "");
+  //   this.isWorkflowAvailable = false;
+  //   if(this.debateStartBtn){
+  //     this.debateStartBtn.destroy();
+  //     this.debateStartLabel.destroy();
+  //   }
+  // }
+
+  if (
+    this.registry.get('isWorkflowRunning') === false &&
+    (!areAllZonesOccupied(this.parallelZones) ||
+    !areAllZonesOccupied(this.votingZones) ||
+    !areAllZonesOccupied(this.routeZones))
+  ) {
     this.registry.set('currentPattern', "");
     this.isWorkflowAvailable = false;
-    if(this.debateStartBtn){
+
+    if (this.debateStartBtn) {
       this.debateStartBtn.destroy();
+      this.debateStartBtn = undefined;
+    }
+
+    if (this.debateStartLabel) {
       this.debateStartLabel.destroy();
+      this.debateStartLabel = undefined;
+    }
+
+    if (this.selectedText) {
+      this.selectedText.destroy();
+      this.selectedText = undefined;
     }
   }
+
 
 
     this.playerControlledAgent =
@@ -1188,13 +1239,13 @@ return result;
       console.log('overlapstart', agent, item);
     });
 
-    if(this.cursors.seven.isDown) {
-      this.scene.start('level1');
-    } else if(this.cursors.eight.isDown) {
-      // this.scene.start('level2');
-    } else if(this.cursors.nine.isDown) {
-      this.scene.start('Main');
-    }
+    // if(this.cursors.seven.isDown) {
+    //   this.scene.start('level1');
+    // } else if(this.cursors.eight.isDown) {
+    //   // this.scene.start('level2');
+    // } else if(this.cursors.nine.isDown) {
+    //   this.scene.start('Main');
+    // }
   }
 
   private updateWorkflowButtonEvent(eventName: string, newEvent: any){
@@ -1202,6 +1253,78 @@ return result;
     this.startWorkflowBtn.on("pointerdown", newEvent);
     this.startWorkflowLabel.setText(eventName);
   }
+
+    private showTryAgainMessage(score: number) {
+    const x = this.cameras.main.width - 52;
+    const y = this.cameras.main.height - 150;
+
+    const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
+    {
+      fontSize: '16px',
+      fontFamily: 'Verdana',
+      backgroundColor: '#5a2a2a',
+      color: '#ffffff',
+      padding: { x: 12, y: 8 },
+      stroke: '#ffffff',
+      strokeThickness: 2,
+      align: 'center'
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setAlpha(0);
+
+    this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
+  }
+
+private createNextLevelButton() {
+  const screenRightX = this.cameras.main.width - 52;
+  const screenCenterY = this.cameras.main.height - 150;
+
+  const bg = this.add.rectangle(screenRightX, screenCenterY, 200, 60, 0x112200)
+    .setScrollFactor(0)
+    .setDepth(1999)
+    .setStrokeStyle(3, 0xffffff)
+    .setOrigin(0.5)
+    .setAlpha(0);
+
+  const nextLevelBtn = this.add.text(screenRightX, screenCenterY, '▶ Next Level', {
+    fontSize: '22px',
+    fontFamily: 'Verdana',
+    backgroundColor: '#2c2a37',
+    color: '#ffffff',
+    padding: { x: 16, y: 8 },
+    stroke: '#ffffff',
+    strokeThickness: 2,
+  })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(2000)
+    .setAlpha(0)
+    .setInteractive();
+
+  this.tweens.add({
+    targets: [bg, nextLevelBtn],
+    alpha: 1,
+    duration: 600,
+    ease: 'Power2',
+  });
+
+  this.tweens.add({
+    targets: nextLevelBtn,
+    scale: { from: 1, to: 1.05 },
+    duration: 600,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut',
+  });
+
+  nextLevelBtn.on('pointerdown', () => {
+    recorder.recordEvent('next_level_clicked');
+    this.scene.start('level3');
+  });
+}
+
 
   // Ensure this code is inside the `create` method after initializing `this.baseBallBtn`
 

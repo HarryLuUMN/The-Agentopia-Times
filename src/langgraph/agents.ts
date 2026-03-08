@@ -10,9 +10,42 @@ import { SequentialGraphStateAnnotation } from "./states";
 import { sequential } from "../game/assets/sprites";
 import { dataFetcher, returnDatasetDescription, startDataFetcher, startHTMLConstructor, startJudges, startScoreComputer, startTextMessager, startVisualizer } from "./workflowUtils";
 import { generateChartImage } from "./visualizationGenerate";
-import { baseballDatasetStatistic, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic } from "../const";
+// import { baseballDatasetStatistic, biasedBaseballDatasetStatistic, biasedKidneyDatasetStatistic, kidneyDatasetStatistic } from "../const";
+import {
+  baseballStatLevel1,
+  baseballStatLevel2,
+  baseballStatLevel3,
+  kidneyStatLevel1,
+  kidneyStatLevel2,
+  kidneyStatLevel3
+} from '../const';
+import { recorder } from "../game/utils/recorder";
 
+function hallucinationByType(t?: string) {
+  switch (t) {
+    case 'factual':
+      return 'Your output should contain **factual contradictions** against known dataset truths.';
+    case 'cherry':
+      return 'Cherry-pick facts and **overgeneralize** to support one side, ignoring opposing data.';
+    case 'framing':
+      return 'Use **framing and ambiguity** to subtly manipulate readers’ impressions without explicit lies.';
+    default:
+      return 'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report';
+  }
+}
 
+function pickStatsBy(dataset: 'baseball' | 'kidney', hType?: string) {
+  if (dataset === 'baseball') {
+    if (hType === 'factual') return baseballStatLevel1;
+    if (hType === 'cherry')  return baseballStatLevel2;
+    if (hType === 'framing') return baseballStatLevel3;
+  } else {
+    if (hType === 'factual') return kidneyStatLevel1;
+    if (hType === 'cherry')  return kidneyStatLevel2;
+    if (hType === 'framing') return kidneyStatLevel3;
+  }
+  return ''; // 默认无统计
+}
 
 export const kidneyPath: string = "./data/kidney.csv";
 export const baseballPath: string = "./data/baseball_cleaned.csv";
@@ -87,13 +120,19 @@ export async function createReport(
     index: number,
     x: number, 
     y: number,
+    opts?: { isFinal?: boolean; textureKey?: string }
 ) {
     const reportBtn = scene.add.image(x, y, "report")
         .setDepth(1002).setInteractive();
 
+    if (opts?.isFinal) {
+        reportBtn.setTexture("final_report").setScale(0.2);
+    }
+
     reportBtn.on("pointerdown", () => {
         EventBus.emit("open-report", { department: zoneName+"-"+index });
     console.log("report button clicked", zoneName+"-"+index);
+    recorder.recordEvent(`report_clicked_${zoneName}-${index}`);
         });
 
     if (!scene.reportIcons) scene.reportIcons = [];
@@ -115,7 +154,8 @@ export function createJournalist(
     destination: any,
     scene: any,
     tilemap: any,
-    index: number
+    index: number,
+    level: string
 ) {
     return async function journalist(state: typeof SequentialGraphStateAnnotation.State) {
         console.log("journalist state:", state.sequentialInput);
@@ -124,11 +164,12 @@ export function createJournalist(
 
         // const msg = await getLLM().invoke(message);
 
-        let bias = "don't provide any misleading statement, stay neutral"
-        if (agent.getBias()!=="") {
-            bias = `provide misleading title, you can use title like:
-            'Jeter beats Justice' or 'treatment B is better than treatment A'`;
-        }
+        // insert hullumination based on levels
+
+        const hType = agent.getBiasType();
+        const hallucination = agent.getBias() === '' ? 
+        'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report conclusion' : 
+        hallucinationByType(hType);
 
 
         let msg:any = '';
@@ -136,22 +177,24 @@ export function createJournalist(
             let datasetDescription = returnDatasetDescription(scene);
             let roleContent = `You are a newspaper editorial, you need to return a title based on the dataset description.`;
             let userContent = `write a news title for the given topic: ${datasetDescription}; 
-                                You should follow these statements in highest priority: ${bias};
+                                You should follow these statements in highest priority: ${hallucination };
                                 The title is prepared for a news or magazine article about the dataset.`;
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
-            msg = await startDataFetcher(scene, agent);
+            msg = await startDataFetcher(scene, agent, hType);
         } else if (index === 2) {
             // generating visualization code
             msg = await generateChartImage(scene, agent);
         }
-
-
+        
         console.log("graph:1st agent msg:", msg.content);
         const originalAgent1X = agent.x;
         const originalAgent1Y = agent.y;
 
         // await updateStateIcons(zones, "mail", 0);
+        //await agent.playDialogue(scene, msg.content);
+        await agent.setAgentInformation(msg.content);
+        await agent.addMssgSprite(scene, "agent_mssg");
         console.log("debug agent pos", destination.x, destination.y);
         await autoControlAgent(scene, agent, tilemap, (destination.x as number), (destination.y as number), "Send Message");
         await autoControlAgent(scene, agent, tilemap, originalAgent1X, originalAgent1Y, "Return to Office");
@@ -171,23 +214,26 @@ export function createManager(
     scene: any, 
     destination: any, 
     nextRoomDestination: any,
-    index: number
+    index: number,
+    level: string
 ) {
     return async function Manager(state: typeof SequentialGraphStateAnnotation.State) {
         console.log("journalist state:", state.sequentialInput);
 
         agent.setAgentState("work");
 
-        let stats = biasedBaseballDatasetStatistic
-        if(scene.registry.get("currentDataset") === "kidney"){
-            stats = biasedKidneyDatasetStatistic;
-        }
+        // let stats = biasedBaseballDatasetStatistic
+        // if(scene.registry.get("currentDataset") === "kidney"){
+        //     stats = biasedKidneyDatasetStatistic;
+        // }
 
-        let bias = "don't provide any misleading statement, stay neutral"
-        if (agent.getBias()!=="") {
-            bias = `provide misleading title, you can use title like:
-            'Jeter beats Justice' or 'treatment B is better than treatment A'`;
-        }
+       const hType = agent.getBiasType();
+        const currentDataset = scene.registry.get("currentDataset"); // 'baseball' | 'kidney'
+        const stats = pickStatsBy(currentDataset, hType);
+
+        const hallucination = agent.getBias() === '' 
+        ? 'stay neutral and avoid misleading statements, analyze the given Simpson Paradox condition. You should explicitly mentioned it in the report conclusion' : 
+        hallucinationByType(hType);
 
         let msg:any = '';
         let scoreData:any = {};
@@ -196,25 +242,23 @@ export function createManager(
             let roleContent = `You are a newspaper editorial, you need to return a title based on the dataset description.`;
             let userContent = `write a news title for the given topic: 
                                 ${datasetDescription}; 
-                                You should following these statements in highest priority: ${bias};
+                                You should following these statements in highest priority: ${hallucination};
                                 The title is prepared for a news or magazine article about the dataset.`;
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
             if(agent.getBias() === ''){
-            const roleContent = "You are a manager responsible for fact-checking." + agent.getBias();
-            const userContent = "your task is to refine the paragraph. Only return the article. \n" + 
-            state.sequentialSecondAgentOutput;
-
-            msg = await startTextMessager(roleContent, userContent);
-        }else {
-            const roleContent = "You are a manager responsible for fact-checking." + agent.getBias();
-            const userContent = "your task is to refine the paragraph. Only return the article. \n" + 
-            state.sequentialSecondAgentOutput + "\n" +
-            `Here are some statistics about the dataset: ${stats}` + 
-            "based on the statistics, you need to refine the paragraph and make sure it is accurate and follow the statistical facts. "
-
-            msg = await startTextMessager(roleContent, userContent);
-        }
+                const roleContent = "You are a manager responsible for fact-checking.";
+                const userContent = "your task is to refine the paragraph. Only return the article. \n" + 
+                state.sequentialSecondAgentOutput;
+                msg = await startTextMessager(roleContent, userContent);
+            }else {
+                const roleContent = "You are a manager responsible for fact-checking." + agent.getBias();
+                const userContent = "your task is to refine the paragraph. Only return the article. \n" + 
+                state.sequentialSecondAgentOutput + "\n" +
+                `Here are some statistics about the dataset: ${stats}` + 
+                "based on the statistics, you need to refine the paragraph and make sure it is accurate and follow the statistical facts. "
+                msg = await startTextMessager(roleContent, userContent);
+            }
         } else if (index === 2) {
             // generating visualization code
             const code = state.sequentialFirstAgentOutput.d3Code;
@@ -267,12 +311,30 @@ export function createManager(
         console.log("graph:3rd agent msg:", msg.content);
         // await updateStateIcons(zones, "idle", 0);
         await agent.setAgentState("idle");
+        //await agent.playDialogue(scene, msg.content);
+        await agent.setAgentInformation(msg.content);
+        await agent.addMssgSprite(scene, "agent_mssg");
 
-        await createReport(scene, "chaining", index, destination.x, destination.y);
-        const report = await createReport(scene, "chaining", index, destination.x, destination.y);
-        await console.log("report in agent", report);
+        // await createReport(scene, "chaining", index, destination.x, destination.y);
+        // const report = await createReport(scene, "chaining", index, destination.x, destination.y);
+        // await console.log("report in agent", report);
         // await autoControlAgent(scene, report, tilemap, 530, 265, "Send Report to Next Department");
+        // await transmitReport(scene, report, nextRoomDestination.x, nextRoomDestination.y);
+        const finalRoom = index === (scene.registry.get('workflowConfig')?.length ?? 1) - 1;
+        
+        await createReport(scene, "chaining", index, destination.x, destination.y);
+
+        const report = await createReport(
+        scene,
+        "chaining",
+        index,
+        destination.x,
+        destination.y,
+        { isFinal: finalRoom }
+        );
+
         await transmitReport(scene, report, nextRoomDestination.x, nextRoomDestination.y);
+
 
         if(index === 2)return { sequentialOutput: msg.content, scoreData: scoreData };
         return { sequentialOutput: msg.content };
@@ -285,27 +347,37 @@ export function createWriter(
     scene: any,
     tilemap: any,
     destination: any,
-    index: number
+    index: number,
+    level: string
 ){ 
     return async function writer(state: typeof SequentialGraphStateAnnotation.State){
         console.log("writer state: ", state.sequentialFirstAgentOutput);
 
         agent.setAgentState("work");
 
-        let bias = "";
-        if(agent.getBias() !== ''){
-        if(scene.registry.get("currentDataset") === "baseball"){
-            bias = biasedBaseballDatasetStatistic;
-        }else {
-bias = biasedKidneyDatasetStatistic;
+        const hType = agent.getBiasType();
+        let hallucination = "";
+        if (agent.getBias() !== '') {
+        const ds = scene.registry.get("currentDataset");
+        hallucination = pickStatsBy(ds, hType);
         }
-    }
 
-    let titleBias = "don't provide any misleading statement, stay neutral"
-        if (agent.getBias()!=="") {
-            titleBias = `provide misleading title, you can use title like:
-            'Jeter beats Justice' or 'treatment B is better than treatment A'`;
+
+        // let titleBias = "don't provide any misleading statement, stay neutral"
+        // if (agent.getBias()!=="") {
+        //     titleBias = `provide misleading title, you can use title like:
+        //     'Jeter beats Justice' or 'treatment B is better than treatment A'`;
+        // }
+
+        let titleBias = "don't provide any misleading statement, stay neutral";
+        if (agent.getBias() !== '') {
+        if (hType === 'cherry' || hType === 'framing') {
+            titleBias = "provide a manipulative or sensational title (e.g., 'Jeter beats Justice' ...)";
+        } else if (hType === 'factual') {
+            titleBias = "intentionally contradict known facts in the title";
         }
+}
+
 
         let msg:any = '';
         if (index === 0) {
@@ -328,7 +400,7 @@ bias = biasedKidneyDatasetStatistic;
                     state.sequentialFirstAgentOutput
             let roleContent = "You are a report writer." + agent.getBias();
             if(agent.getBias() !== ''){
-                userContent += `\nHere are some statistics about the dataset, based on these statistics not the given insights to write the paragrpah, if there're some statement in insights that not follow these statistical facts, use these statistical facts: ${bias}`;
+                userContent += `\nHere are some statistics about the dataset, based on these statistics not the given insights to write the paragrpah, if there're some statement in insights that not follow these statistical facts, use these statistical facts: ${hallucination}`;
             }
             msg = await startTextMessager(roleContent, userContent);
         } else if (index === 2) {
@@ -377,13 +449,16 @@ bias = biasedKidneyDatasetStatistic;
         // \n\n${msg.content}
         // `;
     
-        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index });
+        EventBus.emit("final-report", { report: reportMessage, department: "chaining"+"-"+index, title: "Intermediate Report"});
         // send the final report to final location
         const originalAgent2X = agent.x;
         const originalAgent2Y = agent.y;
 
         // await updateStateIcons(zones, "mail", 1);
-        // await updateStateIcons(scene.chainingZones, "mail");     
+        // await updateStateIcons(scene.chainingZones, "mail");    
+        //await agent.playDialogue(scene, msg.content);
+        await agent.setAgentInformation(msg.content); 
+        await agent.addMssgSprite(scene, "agent_mssg");
         
         await autoControlAgent(scene, agent, tilemap, destination.x, destination.y, "Send Report to Final Location");
         

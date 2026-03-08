@@ -25,6 +25,7 @@ export function constructSingleAgentGraph(
     thisRoomDestination: any,
     destination: any,
     index: number,
+    level: string
 ) {
     const graph = new StateGraph(SingleAgentGraphAnnotation);
 
@@ -37,6 +38,7 @@ export function constructSingleAgentGraph(
             thisRoomDestination,
             destination,
             index,
+            level
         ),
     );
 
@@ -53,6 +55,7 @@ export function createAgent(
     thisRoomDestination: any,
     destination: any,
     index: number,
+    level: string
 ) {
     return async function workAgent(
         state: typeof SingleAgentGraphAnnotation.State,
@@ -79,11 +82,12 @@ export function createAgent(
                             The title is prepared for a news or magazine article about the dataset.`;
 
         agent.setAgentState('work');
+        agent.addMssgSprite(scene, "agent_mssg");
 
         if (index === 0) {
             mssg = await startTextMessager(roleContent, userContent);
         } else if (index === 1) {
-            mssg = await startDataFetcher(scene, agent);
+            mssg = await startDataFetcher(scene, agent, level);
 
             let userContent =
                 'based on the given insights, generate a consice news article to summarize that(words<200)\n' +
@@ -124,6 +128,9 @@ export function createAgent(
 
         console.log('graph:single agent msg', mssg.content);
 
+        //await agent.playDialogue(scene, mssg.content);
+        await agent.setAgentInformation(mssg.content);
+
         await autoControlAgent(
             scene,
             agent,
@@ -142,6 +149,7 @@ export function createAgent(
             '',
         );
 
+        const finalRoom = index === (scene.registry.get('workflowConfig')?.length ?? 1) - 1;
         await createReport(
             scene,
             'single-agent',
@@ -149,16 +157,38 @@ export function createAgent(
             thisRoomDestination.x,
             thisRoomDestination.y,
         );
-        // create the report from routing graph
         const report = await createReport(
             scene,
             'single-agent',
             index,
             thisRoomDestination.x,
             thisRoomDestination.y,
+            { isFinal: finalRoom }
         );
-        // transmit the report to the final location
+
+        // 把报告图标传送到最终房 / 下一房
         await transmitReport(scene, report, destination.x, destination.y);
+
+
+        // await createReport(
+        //     scene,
+        //     'single-agent',
+        //     index,
+        //     thisRoomDestination.x,
+        //     thisRoomDestination.y,
+        // );
+        // // create the report from routing graph
+        // const report = await createReport(
+        //     scene,
+        //     'single-agent',
+        //     index,
+        //     thisRoomDestination.x,
+        //     thisRoomDestination.y,
+        // );
+        // // transmit the report to the final location
+        // await transmitReport(scene, report, destination.x, destination.y);
+
+        
 
         // await updateStateIcons(zones, "idle");
         if(index === 2)return {singleAgentOutput: mssg.content, scoreData: scoreData};

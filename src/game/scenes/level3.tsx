@@ -28,11 +28,11 @@ import { createScoreUI, resetScoreUI } from '../../langgraph/workflowUtils';
 
 // import { createGenerateVisualizationButton } from '../../langgraph/visualizationGenerate';
 
-import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton  } from './levelHelper';
+import { saveHistory, createHistoryButton, createSimpleInstructionHUD, createDifficultySelector, addPDFIcon, pickAgentForSingleStrict, addTitleWithHoverInfo, createDownloadButton} from './levelHelper';
 import { recorder } from '../utils/recorder';
 
+const level = "level3"
 
-const level = "level1"
 
 export interface Zone {
   zone: Phaser.GameObjects.Zone;
@@ -40,7 +40,7 @@ export interface Zone {
   agentsInside: Set<string>;
 }
 
-export class Level1 extends ParentScene {
+export class Level3 extends ParentScene {
 
   private parrellePositionGroup!: Phaser.Physics.Arcade.StaticGroup;
   private agentList: Map<string, Agent> = new Map();
@@ -85,30 +85,37 @@ export class Level1 extends ParentScene {
   private selectedText?: Phaser.GameObjects.Text;
   private selectedDataset: string = "none";
 
+    // private requiredBiasedAgents: number = 1; // the number of the biased agents in this level
+    // private biasedAgentsStatusText!: Phaser.GameObjects.Text;
+
   private attachInfoIcon(
     target: Phaser.GameObjects.Image,
     imageKey: string,
     offsetX = 35,
     offsetY = -20
-  ) {
-    const icon = this.add.text(
-      target.x + offsetX,
-      target.y + offsetY,
-      '🛈',
-      {
-        fontSize: '25px',
-        color: '#ffffff',
-        // backgroundColor: '#0000ff',
-        fontStyle: 'normal',
-        padding: { x: 8, y: 6 },
-        fontFamily: 'Verdana',
-      }
-    )
-    .setScrollFactor(0)
-    .setDepth(9999)
-    .setOrigin(0.5)
-    .setResolution(2)
-    .setInteractive();
+  ){
+      const icon = this.add.text(
+        target.x + offsetX,
+        target.y + offsetY,
+        '🛈',
+        {
+          fontSize: '25px',
+          color: '#ffffff',
+          // backgroundColor: '#0000ff',
+          fontStyle: 'normal',
+          padding: { x: 8, y: 6 },
+          fontFamily: 'Verdana',
+        }
+      )
+      .setScrollFactor(0)
+      .setDepth(9999)
+      .setOrigin(0.5)
+      .setResolution(2)
+      .setInteractive();
+
+      // console.log(
+      //   `🧷 Info icon attached to ${target.texture.key} at (${icon.x}, ${icon.y})`
+      // );
 
     icon.on('pointerover', (pointer: Phaser.Input.Pointer) => {
       const hoverWindowX = pointer.x + 230;
@@ -179,6 +186,31 @@ export class Level1 extends ParentScene {
     }
   }
 
+  // // 获取biased agents状态文本
+  // private getBiasedAgentsStatusText(): string {
+  //   const remaining = Math.max(0, this.requiredBiasedAgents - Agent.biasedAgentsCount);
+    
+  //   if (remaining > 0) {
+  //     return `You need to add a ${remaining} bias agent to start the game.`;
+  //   } else {
+  //     return `✓ Number of biased agents meets requirements (${Agent.biasedAgentsCount}/${this.requiredBiasedAgents})`;
+  //   }
+  // }
+
+  // private updateBiasedAgentsStatusText() {
+  //   this.biasedAgentsStatusText.setText(this.getBiasedAgentsStatusText());
+    
+  //   if (Agent.biasedAgentsCount >= this.requiredBiasedAgents) {
+  //     this.biasedAgentsStatusText.setColor('#00ff00');
+  //   } else {
+  //     this.biasedAgentsStatusText.setColor('#ffff00');
+  //   }
+  // }
+
+  // private canStartGame(): boolean {
+  //   return Agent.biasedAgentsCount >= this.requiredBiasedAgents;
+  // }
+
   constructor() {
     super(level);
     this.sceneName = "";
@@ -194,32 +226,34 @@ export class Level1 extends ParentScene {
 
   create() {
 
-    this.registry.set('biasTypePool', ['factual']); // Level1
+    this.registry.set('biasTypePool', ['factual', 'cherry', 'framing']); // Level3
+    console.log('[pool:set]', this.registry.get('biasTypePool'));
 
     Agent.resetBiasedAgentsCount(); // reset the count of biased agents
-    Agent.maxAllowedBiased = 1;
-      
-    // Randomly select an agent to be biased
+    Agent.maxAllowedBiased = 3;
+
     this.time.delayedCall(100, () => {
       const agentsArray = Array.from(this.agentGroup.getChildren()) as Agent[];
       if (agentsArray.length > 0) {
         Phaser.Utils.Array.Shuffle(agentsArray);
-        const chosenAgents = agentsArray.slice(0, 1);
+        const chosenAgents = agentsArray.slice(0, 3);
         chosenAgents.forEach(agent => agent.setToBiased());
       }
     });
 
-      this.registry.set('isWorkflowRunning', false);
-      this.registry.set('currentPattern', "");
-      this.registry.set('currentDataset', 'baseball');
-      this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
+    this.registry.set('isWorkflowRunning', false);
+    this.registry.set('currentPattern', "");
+    this.registry.set('currentDataset', 'baseball');
+    this.registry.set("workflowConfig", ['voting', 'sequential', 'single_agent']);
 
-      this.isWorkflowAvailable = false;
-      this.selectedDataset = "none";
+    // ✅ 重置实例变量
+    this.isWorkflowAvailable = false;
+    this.selectedDataset = "none";
 
-      this.debateStartBtn = undefined;
-      this.baseBallBtn = undefined;
-      this.kidneyBtn = undefined;
+    // ✅ 清理可能存在的按钮引用
+    this.debateStartBtn = undefined;
+    this.baseBallBtn = undefined;
+    this.kidneyBtn = undefined;
 
     //this.load.bitmapFont('myFont', '/assets/bitmapFont/minogramFont.png', '/assets/bitmapFont/minogramFont.xml');
 
@@ -234,6 +268,7 @@ export class Level1 extends ParentScene {
     this.hudElements = [];
 
     createSimpleInstructionHUD(this); // Create a top note bar
+
 
     // reset button
     const resetButton = this.add.text(-45, 220, '⟳ Reset', {
@@ -252,13 +287,14 @@ export class Level1 extends ParentScene {
       window.location.reload();
     });
 
+    // Level 3: Framing & Ambiguity
     // add title bar + info icon with tooltip
-    const LEVEL_TITLE = 'Level 1: Factual Contradiction';
+    const LEVEL_TITLE = 'Level 3: Framing & Ambiguity';
     const LEVEL_INFO =
-      'Factual Contradiction\n\n' +
-      'This type of hallucination introduces statements that are directly opposite to the truth, such as reversing numbers, times, or causes.\n\n' +
-      'The goal is to recognize and correct conclusions that conflict with facts or common sense.'
-    ;
+      'Framing & Ambiguity\n\n' +
+      'This type of hallucination manipulates the way information is presented by emphasizing certain aspects while downplaying or omitting others.\n\n' +
+      'It can also introduce ambiguous language or unclear definitions, leading to multiple interpretations.\n\n' +
+      'The goal is to identify misleading framing strategies and clarify vague or ambiguous statements.';
 
     addTitleWithHoverInfo(this, LEVEL_TITLE, LEVEL_INFO, {
       x: -50,
@@ -267,15 +303,14 @@ export class Level1 extends ParentScene {
     });
 
 
+
     // DifficultySelector
     createDifficultySelector(this);
 
-    // The PDF icon to open the instruction PDF
+    // PDF icon
     addPDFIcon(this);
 
-    // updateDifficultyText();
-
-    setupScene.call(this, "level1_office");
+    setupScene.call(this, "level3_office");
 
     // register a global variable
     // this.registry.set('isWorkflowRunning', false);
@@ -634,14 +669,9 @@ export class Level1 extends ParentScene {
     this.cameras.main.setZoom(zoom);
     this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
 
-    createDownloadButton(this, "level1");
-    createHistoryButton(this, "level1");
+    createDownloadButton(this, "level2");
+    createHistoryButton(this, "level2");
 
-    // this.events.on('level-complete', () => {
-    //   this.createNextLevelButton();
-    // });
-
-    // 原来是：this.events.on('level-complete', () => { this.createNextLevelButton(); });
     this.events.on('level-complete', (payload?: { score: number }) => {
       const score = payload?.score ?? this.registry.get('finalScore') ?? 0;
 
@@ -651,10 +681,6 @@ export class Level1 extends ParentScene {
         this.showTryAgainMessage(score); // 下面第3步新增的小函数
       }
     });
-
-    // start recording
-    recorder.startRecord();
-
   }
 
   private async choosePattern(pattern: string) {
@@ -703,6 +729,8 @@ return result;
 }
 
   update() {
+    // this.updateBiasedAgentsStatusText();
+
     setZonesExitingDecoration(this.parallelZones, this.agentGroup);
     setZonesExitingDecoration(this.votingZones, this.agentGroup);
     setZonesExitingDecoration(this.chainingZones, this.agentGroup);
@@ -714,7 +742,6 @@ return result;
     (areAllZonesOccupied(this.parallelZones)
      && !this.isWorkflowAvailable
      && !this.registry.get('isWorkflowRunning')
-    //  && this.canStartGame()
     )
   ) {
     this.registry.set('currentPattern', 'parallel');
@@ -771,6 +798,7 @@ return result;
     }
   })
   .on("pointerdown", ()=>{
+    recorder.recordEvent('dataset_switched');
     if(this.selectedDataset !== 'baseball'){
       this.selectedDataset = "baseball";
       this.selectedText?.destroy();
@@ -796,7 +824,6 @@ return result;
       this.baseBallBtn.setDepth(1010);
       
     }
-    recorder.recordEvent('dataset_switched');
   });
     // console.log("ready to attach info icon for baseball");
     this.attachInfoIcon(this.baseBallBtn, 'baseball_groundtruth');
@@ -867,6 +894,7 @@ return result;
       }
     })
     .on("pointerdown", ()=>{
+      recorder.recordEvent('dataset_switched');
       if(this.selectedDataset !== 'kidney'){
         this.selectedDataset = "kidney";
         this.selectedText?.destroy();
@@ -892,9 +920,8 @@ return result;
         this.kidneyBtn.setDepth(1010);
         
       }
-      recorder.recordEvent('dataset_switched');
     });
-    // console.log("ready to attach info icon for kidney");
+    console.log("ready to attach info icon for kidney");
 
     this.attachInfoIcon(this.kidneyBtn, 'kidney_groundtruth');
 
@@ -902,20 +929,21 @@ return result;
 
       recorder.recordEvent('simulation_started');
     
-      // Reset old UIs(ReportUI and ScoresUI)
-      resetReportIcons(this);
-      resetScoreUI(this);
+    // Reset old UIs(ReportUI and ScoresUI)
+    resetReportIcons(this);
+    resetScoreUI(this);
+
 
       this.registry.set('isWorkflowRunning', true);
       console.log("btn pre-start zones data", this.parallelZones);
-      const agentsInfo = getAllAgents(this.parallelZones);
-      console.log("agentsInfo", agentsInfo);
+       const agentsInfo = getAllAgents(this.parallelZones);
+       console.log("agentsInfo", agentsInfo);
        
-      const agentName1 = agentsInfo[0].agents[0];
-      const agentName2 = agentsInfo[1].agents[0];
+       const agentName1 = agentsInfo[0].agents[0];
+        const agentName2 = agentsInfo[1].agents[0];
 
-      const agent1 = this.agentList.get(agentName1);
-      const agent2 = this.agentList.get(agentName2);
+        const agent1 = this.agentList.get(agentName1);
+        const agent2 = this.agentList.get(agentName2);
 
         console.log("agent1", agent1, agent1?.x, agent1?.y);
         console.log("agent2", agent2, agent2?.x, agent2?.y);
@@ -965,6 +993,7 @@ return result;
               console.log("datamap zone", zone);
               return zone.agents[0];
             });
+
           }
           console.log("agentsParameter", i, agentsParameter);
           // fetching agent prompts
@@ -1044,6 +1073,14 @@ return result;
           scoreData.coding_reasons
         );
 
+        // this.events.emit('level-complete');
+        
+        // console.log("first output", firstOutput);
+        // console.log("finalDecision", secondOutput);
+        // console.log("finalDecision2", finalOutput);
+
+        // eventTargetBus.dispatchEvent(new CustomEvent("signal", { detail: "special signal!!!" }));
+
         // 1) 归一化并保存最终分数，便于其他地方读取
         const finalScore = Number(scoreData.overall_score ?? 0);
         this.registry.set('finalScore', finalScore);
@@ -1059,26 +1096,17 @@ return result;
         );
     
         // save the scores to history
-        saveHistory("level1", scoreData.overall_score);
-      });
-    } 
+        saveHistory("level3", scoreData.overall_score);
+    });
+  } 
 
-
-  // if(
-  //   this.registry.get('isWorkflowRunning')===false
-  //   &&!areAllZonesOccupied(this.parallelZones)
-  //   &&!areAllZonesOccupied(this.votingZones)
-  //   &&!areAllZonesOccupied(this.routeZones)
-  // ){
-  //   this.registry.set('currentPattern', "");
-  //   this.isWorkflowAvailable = false;
-  //   if(this.debateStartBtn){
-  //     this.debateStartBtn.destroy();
-  //     this.debateStartLabel.destroy();
-  //   }
-  // }
 
   if (
+    // this.registry.get('isWorkflowRunning') === false &&
+    // !areAllZonesOccupied(this.parallelZones) ||
+    // !areAllZonesOccupied(this.votingZones) ||
+    // !areAllZonesOccupied(this.routeZones) ||
+    // !this.canStartGame() // 添加这个条件
     this.registry.get('isWorkflowRunning') === false &&
     (!areAllZonesOccupied(this.parallelZones) ||
     !areAllZonesOccupied(this.votingZones) ||
@@ -1097,22 +1125,11 @@ return result;
       this.debateStartLabel = undefined;
     }
 
-    // if (this.baseBallBtn) {
-    //   this.baseBallBtn.destroy();
-    //   this.baseBallBtn = undefined;
-    // }
-
-    // if (this.kidneyBtn) {
-    //   this.kidneyBtn.destroy();
-    //   this.kidneyBtn = undefined;
-    // }
-
     if (this.selectedText) {
       this.selectedText.destroy();
       this.selectedText = undefined;
     }
   }
-
 
 
     this.playerControlledAgent =
@@ -1258,7 +1275,6 @@ return result;
   private showTryAgainMessage(score: number) {
     const x = this.cameras.main.width - 52;
     const y = this.cameras.main.height - 150;
-
     const msg = this.add.text(x, y, `Score: ${score.toFixed(1)}\nNeed 8+ to unlock`,
     {
       fontSize: '16px',
@@ -1277,7 +1293,6 @@ return result;
 
     this.tweens.add({ targets: msg, alpha: 1, duration: 300, ease: 'Power2' });
   }
-
 
   private createNextLevelButton() {
   const screenRightX = this.cameras.main.width - 52;
@@ -1323,9 +1338,9 @@ return result;
 
   nextLevelBtn.on('pointerdown', () => {
     recorder.recordEvent('next_level_clicked');
-    
+    recorder.endRecord();
 
-    this.scene.start('level2');
+    this.scene.start('level1');
   });
 }
 

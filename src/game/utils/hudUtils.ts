@@ -164,6 +164,7 @@ export function addRoomHiringMenuHUD(this: any) {
         const { x: agentX, y: agentY } = generateNonCollidingAgentPosition(this.controllableCharacters, bounds);
 
         const agent = new Agent(this, agentX, agentY, 'player', 'misa-front', 'Agent '+this.controllableCharacters.length);
+        agent.addMssgSprite(this, "agent_mssg");
         this.agentGroup.add(agent);
         this.controllableCharacters.push(agent);
         this.agentList.set(agent.getName(), agent);
@@ -179,6 +180,8 @@ export function addRoomHiringMenuHUD(this: any) {
         const { x: agentX, y: agentY } = generateNonCollidingAgentPosition(this.controllableCharacters, bounds);
 
         const agent = new Agent(this, agentX, agentY, 'player', 'misa-front', 'Agent '+this.controllableCharacters.length);
+
+        agent.addMssgSprite(this, "agent_mssg");
         this.agentGroup.add(agent);
         this.controllableCharacters.push(agent);
         this.agentList.set(agent.getName(), agent);

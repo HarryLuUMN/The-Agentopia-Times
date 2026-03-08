@@ -22,14 +22,19 @@ export class Boot extends Scene {
       frameHeight: 16,
     });
 
-
-    
     this.load.image(key.image.tuxemon, assets.tilesets.tuxemon);
     this.load.image(key.image.office, assets.tilesets.office);
     this.load.image(key.image.room_builder_office, assets.tilesets.room_builder_office);
     this.load.image(key.image.interior, assets.tilesets.interior);
     this.load.image(key.image.exterior, assets.tilesets.exterior);
     this.load.image(key.image.coinIcon, assets.sprites.coinIcon);
+    this.load.image(key.image.agent_mssg, assets.sprites.agent_mssg);
+    this.load.image(key.image.agent_idle, assets.sprites.agent_idle);
+
+    this.load.image(key.image.dialog_icon, assets.sprites.dialog_icon);
+    this.load.image(key.image.idle_icon, assets.sprites.idle_icon);
+    this.load.image(key.image.record_icon, assets.sprites.record_icon);
+
     this.load.image(key.image.baseball, assets.sprites.baseball);
     this.load.image(key.image.kidney, assets.sprites.kidney);
     this.load.image(key.image.restart, assets.sprites.restart);
@@ -39,14 +44,18 @@ export class Boot extends Scene {
     this.load.image(key.image.idle, assets.sprites.idle);
     this.load.image(key.image.work, assets.sprites.work);
     this.load.image(key.image.report, assets.sprites.report);
+    this.load.image(key.image.final_report, assets.sprites.final_report);
     this.load.image(key.image.hiring, assets.sprites.hiring);
     this.load.image(key.image.sequential, assets.sprites.sequential);
     this.load.image(key.image.voting, assets.sprites.voting);
     this.load.image(key.image.single_agent, assets.sprites.single_agent);
-    
+    this.load.image(key.image.pdfIcon, assets.sprites.pdf);
 
     this.load.tilemapTiledJSON(key.tilemap.tuxemon, assets.tilemaps.tuxemon);
-    this.load.tilemapTiledJSON(key.tilemap.office, assets.tilemaps.office);
+    
+    this.load.tilemapTiledJSON(key.tilemap.level1_office, assets.tilemaps.level1_office);
+    this.load.tilemapTiledJSON(key.tilemap.level2_office, assets.tilemaps.level2_office);
+    this.load.tilemapTiledJSON(key.tilemap.level3_office, assets.tilemaps.level3_office);
 
     this.load.atlas(key.atlas.player, assets.atlas.image, assets.atlas.data);
     this.load.atlas(key.atlas.bias, assets.atlas.biasImage, assets.atlas.biasData);
@@ -65,7 +74,7 @@ export class Boot extends Scene {
       this.verifyApiKey(storedApiKey).then(isValid => {
         if (isValid) {
           // API Key valid, direct access to the game scene
-          this.scene.start('level2');
+          this.scene.start('level1');
         } else {
           // If the API Key is invalid, go to the main menu
           this.scene.start('MainMenu');

@@ -170,6 +170,231 @@ if (paired_treatment_1t$p.value < 0.05) {
 }
 
 # ============================================
+# BASELINE COMPARISON (Pre-study score difference)
+# ============================================
+cat("\n=== BASELINE COMPARISON (Pre-study scores) ===\n\n")
+cat("Comparing Control vs Treatment groups at baseline (pre-study)\n\n")
+
+# ============================================
+# NORMALITY TESTS FOR PRE-STUDY SCORES
+# ============================================
+cat("=== NORMALITY TESTS FOR PRE-STUDY SCORES ===\n\n")
+
+# Shapiro-Wilk test for normality
+pre_shapiro_control <- shapiro.test(control_pre)
+pre_shapiro_treatment <- shapiro.test(treatment_pre)
+
+cat("SHAPIRO-WILK NORMALITY TEST:\n")
+cat("  Control group:\n")
+cat(sprintf("    W = %.4f, p = %.6f\n", 
+            pre_shapiro_control$statistic, pre_shapiro_control$p.value))
+if (pre_shapiro_control$p.value < 0.05) {
+  cat("    -> NOT NORMALLY DISTRIBUTED (p < 0.05)\n")
+} else {
+  cat("    -> NORMALLY DISTRIBUTED (p >= 0.05)\n")
+}
+
+cat("\n  Treatment group:\n")
+cat(sprintf("    W = %.4f, p = %.6f\n", 
+            pre_shapiro_treatment$statistic, pre_shapiro_treatment$p.value))
+if (pre_shapiro_treatment$p.value < 0.05) {
+  cat("    -> NOT NORMALLY DISTRIBUTED (p < 0.05)\n")
+} else {
+  cat("    -> NORMALLY DISTRIBUTED (p >= 0.05)\n")
+}
+
+# Kolmogorov-Smirnov test (alternative normality test)
+pre_ks_control <- ks.test(scale(control_pre), "pnorm")
+pre_ks_treatment <- ks.test(scale(treatment_pre), "pnorm")
+
+cat("\nKOLMOGOROV-SMIRNOV NORMALITY TEST:\n")
+cat("  Control group:\n")
+cat(sprintf("    D = %.4f, p = %.6f\n", 
+            pre_ks_control$statistic, pre_ks_control$p.value))
+if (pre_ks_control$p.value < 0.05) {
+  cat("    -> NOT NORMALLY DISTRIBUTED (p < 0.05)\n")
+} else {
+  cat("    -> NORMALLY DISTRIBUTED (p >= 0.05)\n")
+}
+
+cat("\n  Treatment group:\n")
+cat(sprintf("    D = %.4f, p = %.6f\n", 
+            pre_ks_treatment$statistic, pre_ks_treatment$p.value))
+if (pre_ks_treatment$p.value < 0.05) {
+  cat("    -> NOT NORMALLY DISTRIBUTED (p < 0.05)\n")
+} else {
+  cat("    -> NORMALLY DISTRIBUTED (p >= 0.05)\n")
+}
+
+# Summary
+cat("\nSUMMARY:\n")
+if (pre_shapiro_control$p.value < 0.05 || pre_shapiro_treatment$p.value < 0.05) {
+  cat("  -> Data may not be normally distributed\n")
+  cat("  -> Consider using non-parametric tests (Wilcoxon) or robust methods\n")
+} else {
+  cat("  -> Data appears to be normally distributed\n")
+  cat("  -> Parametric tests (t-test, ANOVA) are appropriate\n")
+}
+
+cat("\n=== STATISTICAL TESTS FOR PRE-STUDY SCORE DIFFERENCE ===\n\n")
+
+# Independent samples t-test (Student's t-test, equal variances assumed)
+pre_student_test <- t.test(control_pre, treatment_pre, var.equal = TRUE)
+
+cat("INDEPENDENT SAMPLES T-TEST (Student's t-test, equal variances assumed):\n")
+cat(sprintf("  Control group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(control_pre), sd(control_pre)))
+cat(sprintf("  Treatment group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(treatment_pre), sd(treatment_pre)))
+cat(sprintf("  Mean difference (Treatment - Control): %.2f%%\n", 
+            mean(treatment_pre) - mean(control_pre)))
+cat(sprintf("  t = %.4f, df = %d, p = %.6f\n", 
+            pre_student_test$statistic, pre_student_test$parameter, pre_student_test$p.value))
+cat(sprintf("  95%% CI: [%.2f%%, %.2f%%]\n", 
+            pre_student_test$conf.int[1], pre_student_test$conf.int[2]))
+
+if (pre_student_test$p.value < 0.001) {
+  cat("  -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (pre_student_test$p.value < 0.01) {
+  cat("  -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (pre_student_test$p.value < 0.05) {
+  cat("  -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("  -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# Welch's t-test for pre-study scores (unequal variances)
+pre_welch_test <- t.test(control_pre, treatment_pre, var.equal = FALSE)
+
+cat("\nWELCH'S T-TEST (unequal variances assumed):\n")
+cat(sprintf("  Control group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(control_pre), sd(control_pre)))
+cat(sprintf("  Treatment group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(treatment_pre), sd(treatment_pre)))
+cat(sprintf("  Mean difference (Treatment - Control): %.2f%%\n", 
+            mean(treatment_pre) - mean(control_pre)))
+cat(sprintf("  t = %.4f, df = %.2f, p = %.6f\n", 
+            pre_welch_test$statistic, pre_welch_test$parameter, pre_welch_test$p.value))
+cat(sprintf("  95%% CI: [%.2f%%, %.2f%%]\n", 
+            pre_welch_test$conf.int[1], pre_welch_test$conf.int[2]))
+
+if (pre_welch_test$p.value < 0.001) {
+  cat("  -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (pre_welch_test$p.value < 0.01) {
+  cat("  -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (pre_welch_test$p.value < 0.05) {
+  cat("  -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("  -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# Wilcoxon rank-sum test (Mann-Whitney U test) for pre-study scores
+pre_wilcoxon_test <- wilcox.test(control_pre, treatment_pre, exact = FALSE, conf.int = TRUE)
+
+cat("\nWILCOXON RANK-SUM TEST / MANN-WHITNEY U TEST (non-parametric):\n")
+cat(sprintf("  Control group median: %.2f%%\n", median(control_pre)))
+cat(sprintf("  Treatment group median: %.2f%%\n", median(treatment_pre)))
+cat(sprintf("  Median difference (Treatment - Control): %.2f%%\n", 
+            median(treatment_pre) - median(control_pre)))
+cat(sprintf("  W statistic = %.2f\n", pre_wilcoxon_test$statistic))
+cat(sprintf("  p-value = %.6f\n", pre_wilcoxon_test$p.value))
+if (!is.null(pre_wilcoxon_test$conf.int)) {
+  cat(sprintf("  95%% CI for location shift: [%.2f%%, %.2f%%]\n", 
+              pre_wilcoxon_test$conf.int[1], pre_wilcoxon_test$conf.int[2]))
+}
+
+if (pre_wilcoxon_test$p.value < 0.001) {
+  cat("  -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (pre_wilcoxon_test$p.value < 0.01) {
+  cat("  -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (pre_wilcoxon_test$p.value < 0.05) {
+  cat("  -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("  -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+cat("  Note: Using normal approximation due to ties in data\n")
+
+# One-way ANOVA for pre-study scores
+pre_anova_data <- data.frame(
+  Group = factor(c(rep("Control", length(control_pre)), rep("Treatment", length(treatment_pre)))),
+  Pre = c(control_pre, treatment_pre)
+)
+
+pre_anova_model <- aov(Pre ~ Group, data = pre_anova_data)
+pre_anova_summary <- summary(pre_anova_model)
+
+cat("\nONE-WAY ANOVA:\n")
+cat(sprintf("  Control group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(control_pre), sd(control_pre)))
+cat(sprintf("  Treatment group mean: %.2f%% (SD = %.2f%%)\n", 
+            mean(treatment_pre), sd(treatment_pre)))
+cat(sprintf("  Mean difference (Treatment - Control): %.2f%%\n", 
+            mean(treatment_pre) - mean(control_pre)))
+
+pre_anova_p <- pre_anova_summary[[1]][["Group", "Pr(>F)"]]
+cat(sprintf("  F(%d, %d) = %.4f, p = %.6f\n",
+            pre_anova_summary[[1]][["Group", "Df"]],
+            pre_anova_summary[[1]][["Residuals", "Df"]],
+            pre_anova_summary[[1]][["Group", "F value"]],
+            pre_anova_p))
+if (pre_anova_p < 0.001) {
+  cat("  -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (pre_anova_p < 0.01) {
+  cat("  -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (pre_anova_p < 0.05) {
+  cat("  -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("  -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# Calculate eta-squared for ANOVA
+pre_ss_group <- pre_anova_summary[[1]][["Group", "Sum Sq"]]
+pre_ss_total <- sum(pre_anova_summary[[1]][["Sum Sq"]])
+pre_eta_squared <- pre_ss_group / pre_ss_total
+
+cat("\n  Effect size (Eta-squared):\n")
+cat(sprintf("    η² = %.4f\n", pre_eta_squared))
+if (pre_eta_squared < 0.01) {
+  cat("    -> Negligible effect\n")
+} else if (pre_eta_squared < 0.06) {
+  cat("    -> Small effect\n")
+} else if (pre_eta_squared < 0.14) {
+  cat("    -> Medium effect\n")
+} else {
+  cat("    -> Large effect\n")
+}
+
+cat("\n  Note: For two groups, ANOVA is equivalent to Student's t-test\n")
+
+# Test for equal variances
+pre_var_test <- var.test(control_pre, treatment_pre)
+cat("\n  Variance test (F-test):\n")
+cat(sprintf("    F = %.4f, p = %.6f\n", pre_var_test$statistic, pre_var_test$p.value))
+if (pre_var_test$p.value < 0.05) {
+  cat("    -> Variances are significantly different (Welch's t-test appropriate)\n")
+} else {
+  cat("    -> Variances are not significantly different\n")
+}
+
+# Effect size for pre-study difference
+pre_pooled_sd <- sqrt(((length(control_pre) - 1) * var(control_pre) + 
+                       (length(treatment_pre) - 1) * var(treatment_pre)) / 
+                      (length(control_pre) + length(treatment_pre) - 2))
+pre_cohens_d <- (mean(treatment_pre) - mean(control_pre)) / pre_pooled_sd
+
+cat("\n  Effect size (Cohen's d):\n")
+cat(sprintf("    d = %.4f\n", pre_cohens_d))
+if (abs(pre_cohens_d) < 0.2) {
+  cat("    -> Negligible effect\n")
+} else if (abs(pre_cohens_d) < 0.5) {
+  cat("    -> Small effect\n")
+} else if (abs(pre_cohens_d) < 0.8) {
+  cat("    -> Medium effect\n")
+} else {
+  cat("    -> Large effect\n")
+}
+
+# ============================================
 # INDEPENDENT SAMPLES T-TEST (between-group comparison)
 # ============================================
 # Independent samples t-test (parametric)
@@ -404,6 +629,108 @@ if (eta_squared < 0.01) {
 }
 
 # ============================================
+# ANCOVA ANALYSIS (Analysis of Covariance)
+# ============================================
+cat("\n=== ANCOVA ANALYSIS ===\n\n")
+cat("ANCOVA: Post-score ~ Group + Pre-score (covariate)\n\n")
+
+# Prepare data for ANCOVA
+ancova_data <- data.frame(
+  Group = factor(c(rep("Control", length(control_pre)), rep("Treatment", length(treatment_pre)))),
+  Pre = c(control_pre, treatment_pre),
+  Post = c(control_post, treatment_post)
+)
+
+# Fit ANCOVA model
+ancova_model <- lm(Post ~ Pre + Group, data = ancova_data)
+ancova_summary <- summary(ancova_model)
+ancova_anova <- Anova(ancova_model, type = "II")
+
+cat("ANCOVA Results:\n")
+cat(sprintf("  Group effect: F(%d, %d) = %.4f, p = %.6f\n",
+            ancova_anova["Group", "Df"],
+            ancova_anova["Residuals", "Df"],
+            ancova_anova["Group", "F"],
+            ancova_anova["Group", "Pr(>F)"]))
+cat(sprintf("  Pre-score (covariate): F(%d, %d) = %.4f, p = %.6f\n",
+            ancova_anova["Pre", "Df"],
+            ancova_anova["Residuals", "Df"],
+            ancova_anova["Pre", "F"],
+            ancova_anova["Pre", "Pr(>F)"]))
+
+p_ancova <- ancova_anova["Group", "Pr(>F)"]
+if (p_ancova < 0.001) {
+  cat("  -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (p_ancova < 0.01) {
+  cat("  -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (p_ancova < 0.05) {
+  cat("  -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("  -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# Calculate adjusted means (LS means)
+# Using the model to predict at grand mean of Pre
+grand_mean_pre <- mean(c(control_pre, treatment_pre))
+ancova_coef <- coef(ancova_model)
+
+# Adjusted means
+control_adj_mean <- ancova_coef["(Intercept)"] + ancova_coef["Pre"] * grand_mean_pre
+treatment_adj_mean <- ancova_coef["(Intercept)"] + ancova_coef["GroupTreatment"] + 
+                       ancova_coef["Pre"] * grand_mean_pre
+
+# Calculate adjusted CI using model SE
+# Get standard errors for predictions
+pred_control <- predict(ancova_model, 
+                       newdata = data.frame(Group = "Control", Pre = grand_mean_pre),
+                       se.fit = TRUE, interval = "confidence")
+pred_treatment <- predict(ancova_model,
+                         newdata = data.frame(Group = "Treatment", Pre = grand_mean_pre),
+                         se.fit = TRUE, interval = "confidence")
+
+control_adj_ci_lower <- pred_control$fit[1, "lwr"]
+control_adj_ci_upper <- pred_control$fit[1, "upr"]
+treatment_adj_ci_lower <- pred_treatment$fit[1, "lwr"]
+treatment_adj_ci_upper <- pred_treatment$fit[1, "upr"]
+
+cat("\n  Adjusted Means (LS means at grand mean of Pre = ", sprintf("%.2f%%", grand_mean_pre), "):\n")
+cat(sprintf("    Control: %.2f%% (95%% CI: [%.2f%%, %.2f%%])\n",
+            control_adj_mean, control_adj_ci_lower, control_adj_ci_upper))
+cat(sprintf("    Treatment: %.2f%% (95%% CI: [%.2f%%, %.2f%%])\n",
+            treatment_adj_mean, treatment_adj_ci_lower, treatment_adj_ci_upper))
+cat(sprintf("    Difference (adjusted): %.2f%%\n", treatment_adj_mean - control_adj_mean))
+
+# Calculate adjusted improvement (Post - Pre adjusted)
+control_adj_improvement <- control_adj_mean - grand_mean_pre
+treatment_adj_improvement <- treatment_adj_mean - grand_mean_pre
+
+cat("\n  Adjusted Improvement (Post - Pre at grand mean):\n")
+cat(sprintf("    Control: %.2f%%\n", control_adj_improvement))
+cat(sprintf("    Treatment: %.2f%%\n", treatment_adj_improvement))
+cat(sprintf("    Difference: %.2f%%\n", treatment_adj_improvement - control_adj_improvement))
+
+# Store adjusted values for use in visualization
+ancova_adjusted_means <- list(
+  control_pre = grand_mean_pre,
+  control_post = control_adj_mean,
+  control_improvement = control_adj_improvement,
+  treatment_pre = grand_mean_pre,
+  treatment_post = treatment_adj_mean,
+  treatment_improvement = treatment_adj_improvement,
+  control_post_ci_lower = control_adj_ci_lower,
+  control_post_ci_upper = control_adj_ci_upper,
+  treatment_post_ci_lower = treatment_adj_ci_lower,
+  treatment_post_ci_upper = treatment_adj_ci_upper,
+  control_improvement_ci_lower = control_adj_ci_lower - grand_mean_pre,
+  control_improvement_ci_upper = control_adj_ci_upper - grand_mean_pre,
+  treatment_improvement_ci_lower = treatment_adj_ci_lower - grand_mean_pre,
+  treatment_improvement_ci_upper = treatment_adj_ci_upper - grand_mean_pre
+)
+
+# Save ANCOVA results for visualization script
+save(ancova_adjusted_means, p_ancova, file = "ancova_results.RData")
+
+# ============================================
 # SUMMARY AND INTERPRETATION
 # ============================================
 cat("\n=== SUMMARY ===\n\n")
@@ -432,28 +759,55 @@ cat(sprintf("    p-value (Welch's t-test, two-tailed): %.6f\n", p_value_t))
 cat(sprintf("    p-value (Wilcoxon rank-sum test, two-tailed): %.6f\n", p_value_w))
 cat(sprintf("    p-value (Wilcoxon rank-sum test, one-tailed): %.6f\n", p_value_w_onetail))
 cat(sprintf("    p-value (One-way ANOVA): %.6f\n", p_anova))
+cat(sprintf("    p-value (ANCOVA): %.6f\n", p_ancova))
 
 cat("\n  Paired t-test interpretation (within-group):\n")
-cat("    Control group (Pre vs Post):\n")
+cat("    Control group (Pre vs Post, two-tailed):\n")
+cat(sprintf("      p = %.6f", paired_control$p.value))
 if (paired_control$p.value < 0.001) {
-  cat("      -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+  cat(" -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
 } else if (paired_control$p.value < 0.01) {
-  cat("      -> VERY SIGNIFICANT (p < 0.01) **\n")
+  cat(" -> VERY SIGNIFICANT (p < 0.01) **\n")
 } else if (paired_control$p.value < 0.05) {
-  cat("      -> SIGNIFICANT (p < 0.05) *\n")
+  cat(" -> SIGNIFICANT (p < 0.05) *\n")
 } else {
-  cat("      -> NOT SIGNIFICANT (p >= 0.05)\n")
+  cat(" -> NOT SIGNIFICANT (p >= 0.05)\n")
 }
 
-cat("    Treatment group (Pre vs Post):\n")
-if (paired_treatment$p.value < 0.001) {
-  cat("      -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
-} else if (paired_treatment$p.value < 0.01) {
-  cat("      -> VERY SIGNIFICANT (p < 0.01) **\n")
-} else if (paired_treatment$p.value < 0.05) {
-  cat("      -> SIGNIFICANT (p < 0.05) *\n")
+cat("    Control group (Pre vs Post, one-tailed):\n")
+cat(sprintf("      p = %.6f", paired_control_1t$p.value))
+if (paired_control_1t$p.value < 0.001) {
+  cat(" -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (paired_control_1t$p.value < 0.01) {
+  cat(" -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (paired_control_1t$p.value < 0.05) {
+  cat(" -> SIGNIFICANT (p < 0.05) *\n")
 } else {
-  cat("      -> NOT SIGNIFICANT (p >= 0.05)\n")
+  cat(" -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+cat("    Treatment group (Pre vs Post, two-tailed):\n")
+cat(sprintf("      p = %.6f", paired_treatment$p.value))
+if (paired_treatment$p.value < 0.001) {
+  cat(" -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (paired_treatment$p.value < 0.01) {
+  cat(" -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (paired_treatment$p.value < 0.05) {
+  cat(" -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat(" -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+cat("    Treatment group (Pre vs Post, one-tailed):\n")
+cat(sprintf("      p = %.6f", paired_treatment_1t$p.value))
+if (paired_treatment_1t$p.value < 0.001) {
+  cat(" -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (paired_treatment_1t$p.value < 0.01) {
+  cat(" -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (paired_treatment_1t$p.value < 0.05) {
+  cat(" -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat(" -> NOT SIGNIFICANT (p >= 0.05)\n")
 }
 
 cat("\n  Student's t-test (two-tailed) interpretation:\n")
@@ -522,8 +876,19 @@ if (p_anova < 0.001) {
   cat("    -> NOT SIGNIFICANT (p >= 0.05)\n")
 }
 
-# Use the more conservative p-value for conclusion (two-tailed tests)
-p_value <- min(p_value_student_2t, p_value_t, p_value_w, p_anova)
+cat("\n  ANCOVA interpretation (adjusted for pre-score):\n")
+if (p_ancova < 0.001) {
+  cat("    -> HIGHLY SIGNIFICANT (p < 0.001) ***\n")
+} else if (p_ancova < 0.01) {
+  cat("    -> VERY SIGNIFICANT (p < 0.01) **\n")
+} else if (p_ancova < 0.05) {
+  cat("    -> SIGNIFICANT (p < 0.05) *\n")
+} else {
+  cat("    -> NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# Use ANCOVA p-value for conclusion (most appropriate when controlling for baseline)
+p_value <- p_ancova
 
 cat("\nCONCLUSION:\n")
 cat("  Two-tailed tests:\n")

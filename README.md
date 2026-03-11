@@ -25,28 +25,28 @@
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
-- [Table of Contents](#table-of-contents)
-- [Overview](#overview)
-    - [Key Features](#key-features)
-- [Demo: Gameplay Examples](#demo-gameplay-examples)
-- [Team](#team)
-- [Paper](#paper)
-- [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Run Locally](#run-locally)
-- [Citation](#citation)
-- [License](#license)
+- [📑 Table of Contents](#table-of-contents)
+- [📖 Overview](#overview)
+    - [✨ Key Features](#key-features)
+- [🎮 Demo: Gameplay Examples](#demo-gameplay-examples)
+- [👥 Team](#team)
+- [📄 Paper](#paper)
+- [🚀 Getting Started](#getting-started)
+    - [⚙️ Prerequisites](#prerequisites)
+    - [📦 Installation](#installation)
+    - [▶️ Run Locally](#run-locally)
+- [📝 Citation](#citation)
+- [📜 License](#license)
 
 ---
 
-## Overview
+## 📖 Overview
 
 **The Agentopia Times** is an educational game that teaches multi-agent system (MAS) design for hallucination mitigation through active experimentation. The game simulates a newsroom where LLM agents collaborate to create data-driven narratives, with users tasked to adjust communication protocols to manage hallucinated content.
 
-### Key Features
+### ✨ Key Features
 
 - **Newsroom Simulation**: Experience how LLM agents collaborate in a familiar data journalism context
 - **Interactive MAS Design**: Adjust communication protocols and coordination strategies to manage hallucinated content
@@ -56,7 +56,7 @@
 
 ---
 
-## Demo: Gameplay Examples
+## 🎮 Demo: Gameplay Examples
 
 <table>
   <tr>
@@ -81,13 +81,13 @@
 
 ---
 
-## Team
+## 👥 Team
 
 Yilin Lu, Shurui Du, Qianwen Wang
 
 ---
 
-## Paper
+## 📄 Paper
 
 📄 **[The Agentopia Times: Understanding and Mitigating Hallucinations in Multi-Agent LLM Systems via Data Journalism Gameplay](https://ieeexplore.ieee.org/document/11298897)**
 
@@ -97,14 +97,14 @@ Yilin Lu, Shurui Du, Qianwen Wang
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+### ⚙️ Prerequisites
 
 - Node.js 18+
 - npm, yarn, pnpm, or bun
 
-### Installation
+### 📦 Installation
 
 ```bash
 # Clone the repository
@@ -115,7 +115,7 @@ cd The-Agentopia-Times
 npm install
 ```
 
-### Run Locally
+### ▶️ Run Locally
 
 ```bash
 npm run start
@@ -126,7 +126,7 @@ The app will open in your browser. Alternatively, open [http://localhost:5173](h
 
 ---
 
-## Citation
+## 📝 Citation
 
 If you find The Agentopia Times useful, please cite our paper:
 
@@ -141,6 +141,6 @@ If you find The Agentopia Times useful, please cite our paper:
 
 ---
 
-## License
+## 📜 License
 
 This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for details.
